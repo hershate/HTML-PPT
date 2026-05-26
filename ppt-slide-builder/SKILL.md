@@ -9,8 +9,10 @@ description: >-
   "presentation", "slide deck", "slide builder", "PPT风格",
   "添加动画", "页面过渡", "翻页动画", "新建幻灯片",
   "修改幻灯片", "删除幻灯片", "演示文稿", "slides",
-  "ppt builder", "slide animation", "slide transition".
-version: 1.2.0
+  "ppt builder", "slide animation", "slide transition",
+  "添加图片", "插入图片", "图片链接", "图床",
+  "本地图片", "加图片", "放图片", "add image".
+version: 1.3.0
 allowed-tools: Read Write Edit Glob Bash WebSearch
 ---
 
@@ -42,7 +44,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 
 **第一步：判断操作类型。** 解析用户输入，确定用户是创建新项目还是修改已有项目：
 - **创建新项目**：用户提到"新建"、"创建"、"做一个"、"制作"等关键词，或未提及任何已有项目名 → 执行下方 1a-1d 完整流程
-- **修改已有项目**：用户提到已有项目名称（如"给 tech-review-2025 加一页"）、或要求添加/修改/删除/动画/过渡 → 跳转到对应的 Step 2-8，不执行 1a-1d
+- **修改已有项目**：用户提到已有项目名称（如"给 tech-review-2025 加一页"）、或要求添加/修改/删除/动画/过渡/添加图片 → 跳转到对应的 Step 2-9，不执行 1a-1d
 
 如果是创建新项目，执行以下流程：
 
@@ -381,7 +383,74 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - 修改后确认 HTML 结构完整（标签匹配）
    - 如果用户只要求修改内容，不要在修改过程中改变动画 class
 
-### Step 4: 为元素添加入场动画
+### Step 4: 添加图片到幻灯片
+
+支持用户通过自然语言指令向指定幻灯片的指定位置添加图片，图片来源支持本地文件和网络图床链接。
+
+1. **解析用户指令**，提取三个关键参数。缺失任何一项必须追问：
+   - **目标幻灯片**：用户说"第 N 页"或"第 N 张"。缺失时问："要添加到第几页？"
+   - **图片位置**：用户说"左上角"、"右上角"、"居中"、"标题下方"、"列表右侧"、"右下角"、"左下角"、"底部"等。缺失时问："放在页面哪个位置？比如：居中、标题下方、右上角、右下角等"
+   - **图片来源**：用户提供本地文件路径（如 `C:\photos\chart.png`）或网络 URL（如 `https://example.com/image.jpg`）。缺失时问："图片是本地文件还是网络链接？请提供路径或 URL"
+
+2. **处理图片来源，区分两种方式：**
+
+   **方式 A — 网络图片（图床链接）**：
+   - 使用 `WebSearch` 验证 URL 是否有效（搜索 `"<域名>" image hosting status` 检查图床服务可用性）
+   - 验证 URL 文件扩展名是否为常见图片格式（`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`），无扩展名时先尝试直接使用，在质量检查中验证显示
+   - 如果 URL 无法访问，向用户报告并提供替代方案（使用 CSS 占位块或建议重新提供 URL）
+
+   **方式 B — 本地图片文件**：
+   - 使用 `Bash` 确认文件存在：`ls "<file-path>" 2>/dev/null`
+   - 检查扩展名是否为常见图片格式
+   - 创建项目图片目录：`mkdir -p "./ppt-slide-builder/projects/<project-name>/images/"`
+   - 复制文件到项目目录：`cp "<source-path>" "./ppt-slide-builder/projects/<project-name>/images/<filename>"`
+   - 在 HTML 中使用**相对路径**引用：`images/<filename>`
+   - **禁止使用绝对路径**引用本地文件（复制后使用相对路径）
+
+3. **定位目标幻灯片**：在项目 `index.html` 中使用 `<!-- SLIDE: slide-N -->` 标记定位。
+
+4. **确定 HTML 插入位置**，根据用户指定的位置描述：
+
+   | 用户描述 | 对应插入位置 |
+   |---------|------------|
+   | "居中"、"中间"、"中心" | 在 slide 内部 `<div class="content-center">` 末尾追加，或创建该容器 |
+   | "标题下方"、"标题下" | 在第一个 `<h1>` 或 `<h2>` 标签之后插入 |
+   | "左上"、"左上角" | 创建 `position:absolute;top:1rem;left:1rem` 定位的元素 |
+   | "右上"、"右上角" | 创建 `position:absolute;top:1rem;right:1rem` 定位的元素 |
+   | "左下"、"左下角" | 创建 `position:absolute;bottom:1rem;left:1rem` 定位的元素 |
+   | "右下"、"右下角" | 创建 `position:absolute;bottom:1rem;right:1rem` 定位的元素 |
+   | "底部"、"底端" | 在 slide 内部末尾追加（`</section>` 之前） |
+   | "右侧"、"右边" | 将图片放在 `.content-left` 同级，使用 flex 或 grid 包裹 |
+
+5. **生成图片 HTML**，包含以下结构和属性：
+
+   ```html
+   <!-- 方式 A：网络图片 -->
+   <figure class="slide-image" style="margin:1em 0;">
+     <img src="https://example.com/image.jpg" alt="用户提供的描述或默认描述" loading="lazy"
+          style="max-width:100%;height:auto;border-radius:8px;">
+     <figcaption style="text-align:center;font-size:0.85em;color:var(--text-secondary);margin-top:0.5em;">
+       [可选图注]
+     </figcaption>
+   </figure>
+
+   <!-- 方式 B：定位图片（如右上角） -->
+   <div class="slide-image" style="position:absolute;top:1rem;right:1rem;max-width:30%;">
+     <img src="images/logo.png" alt="描述" style="max-width:100%;height:auto;">
+   </div>
+   ```
+
+6. 使用 `Edit` 工具在目标位置插入图片 HTML。如果指定位置的元素不存在（如用户说"标题下方"但该页没有标题），回退到 slide 末尾追加。
+
+7. **规范要求：**
+   - 所有 `<img>` 标签**必须**包含 `alt` 属性（可访问性要求），内容为用户对图片的描述或默认说明
+   - 网络图片 URL 必须先使用 `WebSearch` 验证可用性
+   - 本地图片必须复制到项目 `images/` 目录，使用相对路径引用，禁止绝对路径
+   - 图片默认添加 `class="slide-image"`，便于后续 CSS 选择器统一调整
+   - 图片宽度默认 `max-width:100%` 确保不超出幻灯片边界，高度自动等比缩放
+   - 添加后建议用户预览确认图片显示正常
+
+### Step 5: 为元素添加入场动画
 
 1. 用户指定目标幻灯片编号和要添加动画的元素（如"第 3 页的标题加动画"）。
 
@@ -398,7 +467,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - 一个幻灯片中动画元素建议不超过 5 个
    - 不得修改 `<!-- SLIDE: -->` 标记或幻灯片容器属性
 
-### Step 5: 修改页面过渡效果
+### Step 6: 修改页面过渡效果
 
 1. 用户指定要使用的过渡类型（如"改成缩放过渡"）。
 
@@ -423,7 +492,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - 不得移除 `presentation` 类或 `id="presentation"`
    - 每次只设置一种过渡类型（不叠加多个 `trans-*`）
 
-### Step 6: 修改主题样式
+### Step 7: 修改主题样式
 
 1. 用户指定新的主题要求（如"改成深色模式"、"换蓝色主题"）。
 
@@ -457,7 +526,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - 不修改 `/* ========== SLIDE TRANSITIONS ========== */` 或 `/* ========== ELEMENT ANIMATIONS ========== */` 区块
    - 确保修改后所有幻灯片立即可用（变量名统一）
 
-### Step 7: 删除幻灯片
+### Step 8: 删除幻灯片
 
 1. 用户指定要删除的幻灯片编号。
 
@@ -480,7 +549,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - 删除后必须重新编号（不允许出现编号空洞）
    - 重新编号时，只改编号数字，不改内容和 class
 
-### Step 8: 预览演示
+### Step 9: 预览演示
 
 1. 使用 Bash 执行 Windows 命令在默认浏览器中打开：
    ```
@@ -525,6 +594,15 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 - **Never** 使用 `Write` 重写整个项目文件（应使用 `Edit` 精确修改）
 - **Never** 修改 `ppt-slide-builder/templates/base.html` 模板文件
 
+### 图片处理规则
+- **Always** 所有 `<img>` 标签必须包含 `alt` 属性，内容为用户描述的图片内容或功能性说明
+- **Always** 网络图片 URL 在引用前必须使用 `WebSearch` 验证可用性
+- **Always** 本地图片必须复制到项目 `images/` 目录中使用相对路径引用，禁止在 HTML 中使用绝对路径
+- **Always** 复制本地图片前先创建 `images/` 目录（`mkdir -p projects/<project-name>/images/`）
+- **Always** 验证图片来源的文件扩展名是否为常见图片格式（`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`）
+- **Always** 图片宽度默认 `max-width:100%` 配合 `height:auto` 确保不溢出幻灯片且等比缩放
+- **Never** 在 HTML 中使用 `file://` 协议引用本地图片（会导致浏览器安全策略阻止加载）
+
 ### 项目需求优化规则
 - **Always** 在 Step 1c（提示词优化阶段），对整合后的需求简报执行完整的 12 维度分析，逐项检查每个维度的状态（完善/需细化/缺失/不适用）
 - **Always** Step 1c 中的每项优化判断必须引用用户原始需求的具体表述作为依据，禁止主观臆断
@@ -541,7 +619,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 - **Always** 提出的每个问题必须附带具体选项示例（如"科技蓝、极简黑、温暖橙"），帮助用户快速决策，而非只问开放式问题
 - **Always** 用户回答模糊时，追问细化（如"科技风格"→追问"深色背景还是浅色背景？"）
 - **Always** Step 2（添加幻灯片）中用户未指定内容时，追问新幻灯片的内容和布局
-- **Always** Step 6（修改主题）中用户要求模糊时，追问具体风格方向
+- **Always** Step 7（修改主题）中用户要求模糊时，追问具体风格方向
 - **Never** 一次性提问超过 2 个问题（避免信息过载，让用户不知所措）
 - **Never** 在用户未给出明确指示时，自行假设并直接生成项目（必须先问清楚再动手）
 
@@ -724,6 +802,42 @@ P0：0 项 | P1：3 项 | P2：0 项
 3. 重新编号：slide-3 → slide-2（只改编号，不改内容）
 4. 更新导航和页码
 
+### ✅ Do This — 添加图片到幻灯片
+
+**输入**："在第 1 页右上角添加 logo 图片，用本地文件 C:\logos\company-logo.png"
+
+**操作**：
+1. 检查文件存在：`ls "C:\logos\company-logo.png"` → 确认文件存在
+2. 验证扩展名：`.png` → 合法图片格式
+3. 创建目录：`mkdir -p "./ppt-slide-builder/projects/tech-review-2025/images/"`
+4. 复制文件：`cp "C:\logos\company-logo.png" "./ppt-slide-builder/projects/tech-review-2025/images/company-logo.png"`
+5. 定位 `<!-- SLIDE: slide-1 -->`，在 slide 内部插入定位元素：
+   ```html
+   <div class="slide-image" style="position:absolute;top:1rem;right:1rem;max-width:15%;">
+     <img src="images/company-logo.png" alt="公司 Logo" style="max-width:100%;height:auto;">
+   </div>
+   ```
+6. 确认 `alt` 属性存在、路径为相对路径、宽度限制已设置
+7. 预览确认图片显示正常
+
+**输入**："在第 3 页标题下方添加一张产品截图，用图床链接 https://img.example.com/product.png"
+
+**操作**：
+1. 使用 `WebSearch` 验证 `img.example.com` 是否可用 → 确认有效
+2. 检查 URL 扩展名：`.png` → 合法
+3. 定位 `<!-- SLIDE: slide-3 -->`，在第一个 `<h2>` 标签后插入：
+   ```html
+   <figure class="slide-image" style="margin:1.5em 0;">
+     <img src="https://img.example.com/product.png" alt="产品功能截图" loading="lazy"
+          style="max-width:100%;height:auto;border-radius:8px;box-shadow:var(--shadow-md);">
+     <figcaption style="text-align:center;font-size:0.85em;color:var(--text-secondary);margin-top:0.5em;">
+       图：产品核心功能界面
+     </figcaption>
+   </figure>
+   ```
+4. 验证 URL 有效（WebSearch 已确认）
+5. 预览确认图片加载正常
+
 ### ❌ Not This
 
 - 不使用 slide 标记注释直接搜索 `<section>` 标签来定位 slide（容易匹配错误）
@@ -738,6 +852,11 @@ P0：0 项 | P1：3 项 | P2：0 项
 - 一次性问 5-6 个问题"标题是什么？风格是什么？多少页？每页内容？字体偏好？配色？"让用户不知所措
 - 用户只说了"换个主题"就自行改成蓝色（应先问清楚具体方向）
 - 用户说"加一页"就直接加空白页（应先问新幻灯片的内容和布局）
+- 用户说"加图片"但不指定图片来源就直接使用占位图（应先确认是本地文件还是网络链接）
+- 在 HTML 中使用 `file:///C:/photos/image.png` 绝对路径引用本地图片（浏览器安全策略阻止）
+- 添加 `<img>` 标签时不写 `alt` 属性（违反可访问性标准）
+- 网络图片 URL 未经 WebSearch 验证就直接使用（URL 可能已失效）
+- 图片宽度设为固定值导致在移动端溢出（必须使用 `max-width:100%`）
 
 ## Notes
 
@@ -751,6 +870,8 @@ P0：0 项 | P1：3 项 | P2：0 项
 - **12 维度优化分析**在提问完成后自动执行，优化结果通过项目规约输出，每项优化都附带完整的推理链（原文引用→维度分析→优化决策→优化结果）
 - P0/P1/P2 分级体系帮助理解每项优化的重要性：P0=必补、P1=建议、P2=可选
 - **质量检查**在生成后自动执行（PPT 质量检查清单），通过后输出结构化的**生成报告**，包含文件信息、设计摘要、内容结构和自定义修改指引
+- **添加图片到幻灯片**（Step 4）支持本地文件和网络图床链接两种来源，自动处理文件复制/URL 验证和定位插入
+- 本地图片复制到项目 `images/` 目录后，`index.html` 保持自包含可移植性（图片目录需一起复制）
 - 任何对外部 CDN 或占位图服务的引用，必须先使用 `WebSearch` 验证 URL 是否有效
 - 如果用户已有幻灯片内容（文字、图片列表等），在创建时直接填入，不使用占位文本
 - 如果用户需要图片，优先使用基于 CSS 的纯色占位块（`<div style="width:100%;height:200px;background:var(--bg-alt);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);">图片占位</div>`），避免依赖外部图片服务
