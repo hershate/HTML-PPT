@@ -385,6 +385,51 @@ html, body { height: 100%; font-family: var(--font-body); color: var(--text); ba
     }
   });
 
+  // Mouse wheel navigation (simulates PPT scroll behavior)
+  var presentation = document.getElementById('presentation');
+  presentation.addEventListener('wheel', function(e) {
+    if (isAnimating) return;
+    // Only trigger if the wheel event is not inside a scrollable child element
+    var target = e.target;
+    var scrollable = target.closest('[style*="overflow-y: auto"], [style*="overflow: auto"], .slide');
+    if (scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+      // Element has internal scroll — only navigate if at top/bottom boundary
+      if (e.deltaY > 0 && scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 2) {
+        e.preventDefault();
+        navigate(1);
+      } else if (e.deltaY < 0 && scrollable.scrollTop <= 2) {
+        e.preventDefault();
+        navigate(-1);
+      }
+      // Otherwise let the natural scroll happen
+    } else {
+      // No scrollable content — wheel always navigates
+      e.preventDefault();
+      if (e.deltaY > 0) navigate(1);
+      else navigate(-1);
+    }
+  }, { passive: false });
+
+  // Click on blank space to advance (PPT behavior)
+  presentation.addEventListener('click', function(e) {
+    if (isAnimating) return;
+    // Only advance if click target is the presentation background or a slide's blank area
+    // Do NOT advance if clicking on interactive elements
+    var tag = e.target.tagName;
+    if (tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (e.target.closest('.slide-nav')) return;
+    if (e.target.closest('a, button, input, select, textarea')) return;
+    // Check if the click is directly on the slide background (not on content)
+    if (e.target === presentation || e.target.classList.contains('slide') || e.target === document.body) {
+      e.preventDefault();
+      navigate(1);
+    } else {
+      // Click on non-interactive content (text, images, etc.) — go to next
+      e.preventDefault();
+      navigate(1);
+    }
+  });
+
   // Touch/swipe support
   (function() {
     var startX = 0, startY = 0;
