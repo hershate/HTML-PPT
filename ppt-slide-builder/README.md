@@ -115,7 +115,7 @@ ppt-slide-builder/
 - `Edit` — 精确修改已有内容
 - `Glob` — 查找项目目录
 - `Bash` — 在浏览器中打开预览
-- `WebSearch` — 验证外部资源 URL（占位图片服务、Google Fonts 等）
+- `WebSearch` — 验证网络图床链接和外部图片 URL 的有效性
 
 ### 输出说明
 

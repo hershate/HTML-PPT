@@ -43,7 +43,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 ### Step 1: 初始化 PPT 项目（含用户提问流程）
 
 **第一步：判断操作类型。** 解析用户输入，确定用户是创建新项目还是修改已有项目：
-- **创建新项目**：用户提到"新建"、"创建"、"做一个"、"制作"等关键词，或未提及任何已有项目名 → 执行下方 1a-1d 完整流程
+- **创建新项目**：用户提到"新建"、"创建"、"做一个"、"制作"等关键词，或未提及任何已有项目名 → 执行下方 1a-1e 完整流程
 - **修改已有项目**：用户提到已有项目名称（如"给 tech-review-2025 加一页"）、或要求添加/修改/删除/动画/过渡/添加图片 → 跳转到对应的 Step 2-9，不执行 1a-1d
 
 如果是创建新项目，执行以下流程：
@@ -274,7 +274,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - **各页内容**：按照内容结构规约生成每页的 HTML，包括标题、正文、列表、图表、布局和动画 class
 
 2. 创建工作目录并生成文件：
-   - 创建目录 `./ppt-slide-builder/projects/<项目名称>/`
+   - 创建目录 `./ppt-slide-builder/projects/<project-name>/`
    - 使用 `Write` 生成 `index.html`
 
 3. 打开浏览器预览：`start "" "./ppt-slide-builder/projects/<project-name>/index.html"`
@@ -328,7 +328,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 - `End` — 跳转到最后一页
 ```
 
-**CDN 与外部资源验证**：如果生成的 HTML 中包含任何外部资源 URL（如 `via.placeholder.com` 占位图片），必须使用 `WebSearch` 验证该 URL 当前是否有效。失效时使用可靠的替代服务或在 HTML 中用 CSS 纯色占位块代替图片引用。
+**CDN 与外部资源验证**：如果生成的 HTML 中包含任何外部资源 URL（如用户提供的图床链接或占位图服务），必须使用 `WebSearch` 验证该 URL 当前是否有效。失效时使用 CSS 纯色占位块代替图片引用，并向用户报告该 URL 不可用。
 
 ### Step 2: 添加新幻灯片
 
@@ -688,9 +688,9 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
   依据：内容涉及技术趋势，推断目标受众为技术从业者
   → 允许使用技术术语，图表复杂度中等
 
-维度5-约束条件：⚠️→P1 缺失 → 补充响应式约束
-  依据：网页PPT需要适配移动端
-  → 设置响应式断点 768px/480px
+维度5-约束条件：⚠️→P1 缺失 → 补充过渡和动画约束
+  依据：用户未指定过渡偏好
+  → 使用默认 trans-slide-left 过渡，每页动画数量保持在 3-5 个
 
 维度9-内容数据：❌→P1 缺失 → 使用示例数据
   依据：第3页需要数据展示但用户未提供具体数字
@@ -731,7 +731,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 | 1-风格 | ⚠️ | "科技蓝深色" | 配色方案如上 | 科技蓝→蓝色系，深色→深背景 |
 | 2-内容 | ⚠️ | "第2页趋势" | 5项列表+动画 | 趋势介绍用列表最清晰 |
 | 3-受众 | ❌→P1 | 未提供 | 技术团队 | 内容涉及技术趋势 |
-| 5-约束 | ⚠️→P1 | 未提供 | 响应式+动画约束 | 网页PPT需要适配 |
+| 5-约束 | ⚠️→P1 | 未提供 | 默认 trans-slide-left | 用户未指定过渡类型 |
 | 9-数据 | ❌→P1 | 未提供 | 示例KPI数据 | 展示数据页需要填充 |
 
 ### 优化统计
@@ -829,7 +829,7 @@ P0：0 项 | P1：3 项 | P2：0 项
    ```html
    <figure class="slide-image" style="margin:1.5em 0;">
      <img src="https://img.example.com/product.png" alt="产品功能截图" loading="lazy"
-          style="max-width:100%;height:auto;border-radius:8px;box-shadow:var(--shadow-md);">
+          style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
      <figcaption style="text-align:center;font-size:0.85em;color:var(--text-secondary);margin-top:0.5em;">
        图：产品核心功能界面
      </figcaption>
