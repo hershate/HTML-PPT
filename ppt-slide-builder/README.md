@@ -14,9 +14,8 @@ ppt-slide-builder/
 │   └── base.html                  # 演示文稿基础模板
 ├── references/
 │   └── animation-reference.md     # 动画与过渡效果完整参考
-└── projects/                      # 生成的演示项目（自动创建）
-    └── <project-name>/
-        └── index.html             # 单个完整的演示文件
+└── <project-name>/                # 生成的演示项目（在当前工作目录下）
+    └── index.html                 # 单个完整的演示文件
 ```
 
 ## 安装方式
@@ -119,7 +118,7 @@ ppt-slide-builder/
 
 ### 输出说明
 
-- 生成的演示文件在 `ppt-slide-builder/projects/<project-name>/index.html`
+- 生成的演示文件在当前工作目录的 `<project-name>/index.html`
 - 完全自包含，无外部依赖，可离线使用
 - 支持键盘、鼠标、触摸三种翻页方式
 - 支持 URL hash 定位到指定页（`index.html#slide-3`）

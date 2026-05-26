@@ -274,10 +274,10 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    - **各页内容**：按照内容结构规约生成每页的 HTML，包括标题、正文、列表、图表、布局和动画 class
 
 2. 创建工作目录并生成文件：
-   - 创建目录 `./ppt-slide-builder/projects/<project-name>/`
+   - 创建目录 `./<project-name>/`
    - 使用 `Write` 生成 `index.html`
 
-3. 打开浏览器预览：`start "" "./ppt-slide-builder/projects/<project-name>/index.html"`
+3. 打开浏览器预览：`start "" "./<project-name>/index.html"`
 
 #### 1e. 质量检查与输出报告
 
@@ -299,7 +299,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 ## 生成报告
 
 ### 文件信息
-- **项目路径**：`ppt-slide-builder/projects/<project-name>/index.html`
+- **项目路径**：`<project-name>/index.html`
 - **演示标题**：[标题]
 - **幻灯片总数**：[N]
 - **过渡效果**：[过渡类型]
@@ -322,10 +322,11 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 - **调整动画**：在目标元素的 `class` 属性中添加/移除 `anim-*` 和 `anim-delay-*` 类
 - **浏览器兼容性**：`color-mix()` 用于导航栏背景，需 Chrome 111+ / Firefox 113+ / Safari 16.2+。如需兼容旧浏览器，将 `.slide-nav` 的 `background` 替换为纯色 `var(--bg-alt)`
 
-### 快捷键
-- `←` / `↑` / `→` / `↓` / `Space` — 翻页
-- `Home` — 跳转到第一页
-- `End` — 跳转到最后一页
+### 导航方式
+- **键盘**：`←` / `↑` 上一页 · `→` / `↓` / `Space` 下一页 · `Home` 首尾 · `End` 最后一页
+- **鼠标点击**：点击幻灯片空白区域（非按钮/链接/输入框）自动翻到下一页
+- **鼠标滚轮**：向下滚动翻下一页，向上滚动翻上一页
+- **触摸**：左右滑动翻页
 ```
 
 **CDN 与外部资源验证**：如果生成的 HTML 中包含任何外部资源 URL（如用户提供的图床链接或占位图服务），必须使用 `WebSearch` 验证该 URL 当前是否有效。失效时使用 CSS 纯色占位块代替图片引用，并向用户报告该 URL 不可用。
@@ -402,8 +403,8 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
    **方式 B — 本地图片文件**：
    - 使用 `Bash` 确认文件存在：`ls "<file-path>" 2>/dev/null`
    - 检查扩展名是否为常见图片格式
-   - 创建项目图片目录：`mkdir -p "./ppt-slide-builder/projects/<project-name>/images/"`
-   - 复制文件到项目目录：`cp "<source-path>" "./ppt-slide-builder/projects/<project-name>/images/<filename>"`
+   - 创建项目图片目录：`mkdir -p "./<project-name>/images/"`
+   - 复制文件到项目目录：`cp "<source-path>" "./<project-name>/images/<filename>"`
    - 在 HTML 中使用**相对路径**引用：`images/<filename>`
    - **禁止使用绝对路径**引用本地文件（复制后使用相对路径）
 
@@ -553,7 +554,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 
 1. 使用 Bash 执行 Windows 命令在默认浏览器中打开：
    ```
-   start "" "./ppt-slide-builder/projects/<project-name>/index.html"
+   start "" "./<project-name>/index.html"
    ```
 
 2. 提醒用户快捷键：左右方向键翻页、Home/End 跳转首尾、空格键下一页。
@@ -561,8 +562,8 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 ## Constraints
 
 ### 项目管理规则
-- **Always** 所有 PPT 项目文件保存在 `./ppt-slide-builder/projects/<project-name>/index.html`
-- **Always** 每个项目是一个独立的 HTML 目录（`projects/<project-name>/`），后续项目使用不同目录名
+- **Always** 所有 PPT 项目文件保存在当前工作目录下的 `./<project-name>/index.html`
+- **Always** 每个项目是一个独立的目录（`<project-name>/`），以 `index.html` 为入口文件
 - **Always** 每个 slide 必须包含 `id="slide-N"`、`data-slide="N"`、`role="region"`、`aria-label="Slide N"` 属性
 - **Always** 每次操作前先使用 `Read` 读取当前项目文件，确认文件结构和现有 slide 列表
 - **Always** 操作完成后使用 `Read` 验证结果，确认 HTML 结构完整
@@ -598,7 +599,7 @@ allowed-tools: Read Write Edit Glob Bash WebSearch
 - **Always** 所有 `<img>` 标签必须包含 `alt` 属性，内容为用户描述的图片内容或功能性说明
 - **Always** 网络图片 URL 在引用前必须使用 `WebSearch` 验证可用性
 - **Always** 本地图片必须复制到项目 `images/` 目录中使用相对路径引用，禁止在 HTML 中使用绝对路径
-- **Always** 复制本地图片前先创建 `images/` 目录（`mkdir -p projects/<project-name>/images/`）
+- **Always** 复制本地图片前先创建 `images/` 目录（`mkdir -p <project-name>/images/`）
 - **Always** 验证图片来源的文件扩展名是否为常见图片格式（`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`）
 - **Always** 图片宽度默认 `max-width:100%` 配合 `height:auto` 确保不溢出幻灯片且等比缩放
 - **Never** 在 HTML 中使用 `file://` 协议引用本地图片（会导致浏览器安全策略阻止加载）
@@ -752,7 +753,7 @@ P0：0 项 | P1：3 项 | P2：0 项
    - `--font-display: 'Inter', sans-serif`
    - `--font-body: 'Inter', sans-serif`
 3. 替换占位符：标题 → "2025 年度技术回顾"
-4. 创建文件 `./ppt-slide-builder/projects/tech-review-2025/index.html`
+4. 创建文件 `./tech-review-2025/index.html`
 5. 浏览器中打开
 
 **结果**：一个深蓝色科技风格的双页演示，第一页标题 + 副标题，第二页内容区。
@@ -762,7 +763,7 @@ P0：0 项 | P1：3 项 | P2：0 项
 **输入**："在第 2 页后面加一页，展示技术趋势列表"
 
 **操作**：
-1. 读取 `projects/tech-review-2025/index.html`
+1. 读取 `./tech-review-2025/index.html`
 2. 在 `<!-- /SLIDE -->`（slide-2）之后插入新 slide：
    ```html
    <!-- SLIDE: slide-3 -->
@@ -809,8 +810,8 @@ P0：0 项 | P1：3 项 | P2：0 项
 **操作**：
 1. 检查文件存在：`ls "C:\logos\company-logo.png"` → 确认文件存在
 2. 验证扩展名：`.png` → 合法图片格式
-3. 创建目录：`mkdir -p "./ppt-slide-builder/projects/tech-review-2025/images/"`
-4. 复制文件：`cp "C:\logos\company-logo.png" "./ppt-slide-builder/projects/tech-review-2025/images/company-logo.png"`
+3. 创建目录：`mkdir -p "./tech-review-2025/images/"`
+4. 复制文件：`cp "C:\logos\company-logo.png" "./tech-review-2025/images/company-logo.png"`
 5. 定位 `<!-- SLIDE: slide-1 -->`，在 slide 内部插入定位元素：
    ```html
    <div class="slide-image" style="position:absolute;top:1rem;right:1rem;max-width:15%;">
