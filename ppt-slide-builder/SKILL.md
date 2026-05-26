@@ -11,7 +11,7 @@ description: >-
   "修改幻灯片", "删除幻灯片", "演示文稿", "slides",
   "ppt builder", "slide animation", "slide transition".
 version: 1.2.0
-allowed-tools: Read Write Edit Glob Bash
+allowed-tools: Read Write Edit Glob Bash WebSearch
 ---
 
 # PPT Slide Builder
@@ -40,7 +40,11 @@ allowed-tools: Read Write Edit Glob Bash
 
 ### Step 1: 初始化 PPT 项目（含用户提问流程）
 
-在开始任何操作前，先确定用户的操作目标。如果是创建新项目，执行以下流程：
+**第一步：判断操作类型。** 解析用户输入，确定用户是创建新项目还是修改已有项目：
+- **创建新项目**：用户提到"新建"、"创建"、"做一个"、"制作"等关键词，或未提及任何已有项目名 → 执行下方 1a-1d 完整流程
+- **修改已有项目**：用户提到已有项目名称（如"给 tech-review-2025 加一页"）、或要求添加/修改/删除/动画/过渡 → 跳转到对应的 Step 2-8，不执行 1a-1d
+
+如果是创建新项目，执行以下流程：
 
 #### 1a. 解析用户已提供的信息
 
@@ -97,8 +101,10 @@ allowed-tools: Read Write Edit Glob Bash
 **第 4 轮：补充细节**
 ```
 根据前三轮收集到的信息，判断是否还需要其他细节。
-如果用户已提供足够信息，跳过此轮直接进入生成。
+如果用户已提供足够信息，跳过此轮直接进入 1c 优化阶段。
 ```
+
+**用户退出条件**：在任何一轮中，如果用户明确表示"就这样"、"先这样"、"可以了"或不再提供有效信息，立即终止提问流程。使用已收集到的信息进入 1c 优化阶段，缺失信息在 1c-iii 中按 P0/P1 推断补充，不得无限循环追问。
 
 #### 1c. 项目需求提示词优化阶段
 
@@ -182,7 +188,7 @@ allowed-tools: Read Write Edit Glob Bash
 | 内容结构不完整（维度2 ❌） | 基于演示标题和已知信息推断合理的内容框架 | 无逐页内容时无法生成 `<section>` 元素 |
 | 受众背景缺失（维度3 ⚠️） | 根据演示类型推断合适的语气和复杂度 | 受众影响字体大小、信息密度、色调选择 |
 | 布局类型未指定（维度4 ⚠️） | 根据内容类型（文字/列表/图表）自动选择最优布局 | 内容决定布局，合理的布局提升可读性 |
-| 约束条件不足（维度5 ⚠️） | 根据演示场景添加合理的默认约束（如响应式、可访问性） | 合理的默认值确保基本质量和兼容性 |
+| 约束条件不足（维度5 ⚠️/❌） | 根据演示场景添加合理的默认约束（如响应式、可访问性） | 合理的默认值确保基本质量和兼容性 |
 | 参考示例缺失（维度6 —） | 跳过，不虚构参考 | 无参考时不应脑补风格参照物 |
 | 叙述逻辑不清晰（维度7 ⚠️） | 重新排列幻灯片为合理的叙述顺序 | 逻辑顺序影响演示的说服力和流畅度 |
 | 语言风格不确定（维度8 ⚠️） | 根据演示主题和受众设定默认语言风格 | 语言影响标题和正文的措辞方式 |
@@ -224,6 +230,7 @@ allowed-tools: Read Write Edit Glob Bash
 - 正文字体（--font-body）：[字体名]
 - 幻灯片内边距（--slide-padding）：[值，默认4rem]
 - 过渡时长（--transition-duration）：[值，默认0.6s]
+- 过渡缓动（--transition-easing）：[值，默认cubic-bezier(0.16, 1, 0.3, 1)]
 - 过渡类型：[trans-* 类名]
 
 ### 内容结构规约
@@ -257,7 +264,7 @@ allowed-tools: Read Write Edit Glob Bash
 1. 读取模板文件 `ppt-slide-builder/templates/base.html`，根据优化后的项目规约填充：
    - `{{PRESENTATION_TITLE}}` → 规划中的演示标题
    - `{{TITLE}}` / `{{SUBTITLE}}` → 第一页标题/副标题
-   - `{{SLIDE2_TITLE}}` / `{{SLIDE2_CONTENT}}` → 第二页内容（如果只有一页则删除对应 slide）
+   - `{{SLIDE2_TITLE}}` / `{{SLIDE2_CONTENT}}` → 第二页内容（如果项目只有一页，则删除模板中第二个 slide 区块从 `<!-- SLIDE: slide-2 -->` 到 `<!-- /SLIDE -->` 的全部内容）
    - `{{SLIDE_COUNT}}` → 规划中的幻灯片总数
    - `{{PROGRESS_PERCENT}}` → 初始进度百分比（1/总数 × 100）
    - **主题变量**：按照规划中的设计主题规约修改 `:root` CSS 变量（`--bg`、`--text`、`--accent`、`--font-display`、`--font-body` 等）
@@ -296,9 +303,12 @@ allowed-tools: Read Write Edit Glob Bash
 
 4. 在最后一个 `<!-- /SLIDE -->` 之后、`</div>` 之前插入新幻灯片。
 
-5. 更新导航逻辑中的 `#slideTotal` 值（将旧总数 +1）。
+5. 更新 HTML 中所有页码相关位置：
+   - `#slideTotal` 元素：修改其文本内容为旧总数 +1
+   - 如果存在进度条初始宽度 `#slideProgress` 的 `style` 属性，将百分比更新为 `(1 / 新总数 × 100)`
+   - JavaScript 中的 `slides.length` 会自动适应（基于 DOM 查询），无需修改 JS 逻辑
 
-6. 确认 `.presentation` 中 `.slide` 元素的总数与导航显示一致。
+6. 确认 `.presentation` 中 `.slide` 元素的总数与 `#slideTotal` 显示的数值一致。
 
 7. **规范要求：**
    - 新幻灯片必须放在最后（不允许插入到中间，避免破坏编号连续性）
@@ -346,11 +356,17 @@ allowed-tools: Read Write Edit Glob Bash
 
 3. 从 `references/animation-reference.md` 中选择过渡类名（`trans-fade`、`trans-slide-left`、`trans-zoom` 等）。
 
-4. 使用 `Edit` 替换 `presentation` 容器上的过渡类名：
-   ```
-   旧: <div class="presentation trans-slide-left" id="presentation">
-   新: <div class="presentation trans-zoom" id="presentation">
-   ```
+4. 使用 `Edit` 替换 `presentation` 容器上的过渡类名。注意区分首次设置和修改已有过渡：
+   - **首次设置**（模板中无 `trans-*` 类）：
+     ```
+     旧: <div class="presentation" id="presentation">
+     新: <div class="presentation trans-zoom" id="presentation">
+     ```
+   - **修改已有过渡**（已有 `trans-slide-left` 等）：
+     ```
+     旧: <div class="presentation trans-slide-left" id="presentation">
+     新: <div class="presentation trans-zoom" id="presentation">
+     ```
 
 5. **规范要求：**
    - 只修改 `presentation` 容器类名中的 `trans-*` 部分
@@ -399,12 +415,15 @@ allowed-tools: Read Write Edit Glob Bash
 
 3. 使用 `Edit` 工具**精确匹配**从 `<!-- SLIDE: slide-N -->` 到 `<!-- /SLIDE -->` 的全部内容，替换为空字符串。
 
-4. 删除后**重新编号所有后续幻灯片**：
-   - 将 `slide-N` → `slide-(N-1)` (包括 `id`, `data-slide`, `aria-label`, `<!-- SLIDE: -->` 注释)
-   - 更新页码显示
-   - 更新导航 `nav-dot`
+4. 删除后**重新编号所有后续幻灯片**，需要更新的属性包括：
+   - `id="slide-N"` → `id="slide-(N-1)"`
+   - `data-slide="N"` → `data-slide="(N-1)"`  
+   - `aria-label="Slide N"` → `aria-label="Slide (N-1)"`
+   - `<!-- SLIDE: slide-N -->` 注释 → `<!-- SLIDE: slide-(N-1) -->`
+   - 导航栏 `#slideTotal` 显示总数减 1
+   - 进度条初始 `style="width:..."` 重新计算为 `(1 / 新总数 × 100)%`
 
-5. 更新进度条宽度（重新计算百分比）。
+5. **注意**：`aria-hidden` 属性为布尔值（`"true"` / `"false"`）不包含编号，无需修改。JavaScript 中的 `slides.length` 基于 DOM 查询自动适应，无需手动修改。
 
 6. **规范要求：**
    - 删除前向用户确认幻灯片编号和内容
@@ -447,7 +466,7 @@ allowed-tools: Read Write Edit Glob Bash
 - **Always** 元素动画类名从 `references/animation-reference.md` 中选择
 - **Always** 每个元素最多一个动画类 + 一个延迟类
 - **Always** 延迟值从 `anim-delay-1` 到 `anim-delay-10`（对应 0.1s 到 1.0s）
-- **Never** 在 `<!-- ========== ELEMENT ANIMATIONS ========== -->` 区块之外定义动画 keyframes
+- **Never** 在 `/* ========== ELEMENT ANIMATIONS ========== */` 区块之外（CSS 注释标记）定义新的动画 keyframes
 
 ### 操作安全规则
 - **Always** 任何删除操作前向用户确认目标和影响范围
