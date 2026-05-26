@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>班级成绩分析报告</title>
+<style>
+/* ========== THEME ========== */
+:root {
+  /* Colors */
+  --bg: #fef7ed;
+  --bg-alt: #ffedd5;
+  --text: #292524;
+  --text-secondary: #78716c;
+  --accent: #ea580c;
+  --accent-hover: #c2410c;
+  --border: #e6d5c0;
+
+  /* Typography */
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Courier New', monospace;
+
+  /* Spacing */
+  --slide-padding: 4rem;
+  --content-max-width: 960px;
+
+  /* Transition */
+  --transition-duration: 0.6s;
+  --transition-easing: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ========== RESET ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: var(--font-body); color: var(--text); background: var(--bg); -webkit-font-smoothing: antialiased; }
+
+/* ========== PRESENTATION ========== */
+.presentation { height: 100dvh; position: relative; overflow: hidden; }
+
+/* ========== SLIDES ========== */
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: var(--slide-padding);
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--transition-duration) var(--transition-easing), transform var(--transition-duration) var(--transition-easing);
+  transform: translateY(24px) scale(0.98);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.slide.active {
+  opacity: 1; visibility: visible;
+  transform: translateY(0) scale(1);
+}
+.slide > * { max-width: var(--content-max-width); width: 100%; }
+
+/* Slide content typography */
+.slide h1 { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 4rem); line-height: 1.15; margin-bottom: 0.75em; }
+.slide h2 { font-family: var(--font-display); font-size: clamp(1.5rem, 3.5vw, 2.5rem); line-height: 1.2; margin-bottom: 0.6em; }
+.slide h3 { font-size: clamp(1.1rem, 2vw, 1.4rem); font-weight: 600; margin-bottom: 0.5em; }
+.slide p { font-size: clamp(1rem, 1.8vw, 1.2rem); line-height: 1.7; margin-bottom: 1em; color: var(--text-secondary); }
+.slide ul, .slide ol { padding-left: 1.5em; margin-bottom: 1em; }
+.slide li { font-size: clamp(1rem, 1.8vw, 1.2rem); line-height: 1.7; margin-bottom: 0.4em; color: var(--text-secondary); }
+.slide img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }
+.slide blockquote { border-left: 4px solid var(--accent); padding-left: 1.5em; margin: 1em 0; font-style: italic; color: var(--text-secondary); }
+.slide code { font-family: var(--font-mono); font-size: 0.9em; background: var(--bg-alt); padding: 0.2em 0.4em; border-radius: 4px; }
+.slide pre { background: var(--bg-alt); padding: 1.5em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
+.slide pre code { background: none; padding: 0; }
+
+/* Content layouts */
+.slide .content-center { text-align: center; align-items: center; }
+.slide .content-left { text-align: left; align-items: flex-start; }
+.slide .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1em 0; }
+.slide .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin: 1em 0; }
+.slide .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1.5rem; margin: 1em 0; }
+@media (max-width: 768px) {
+  .slide .grid-2, .slide .grid-3, .slide .grid-4 { grid-template-columns: 1fr; }
+}
+
+/* ========== KPI CARDS ========== */
+.kpi-card {
+  background: var(--bg-alt);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.kpi-card .kpi-number {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.kpi-card .kpi-label {
+  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
+  color: var(--text-secondary);
+  margin-top: 0.4em;
+}
+
+/* ========== BAR CHARTS ========== */
+.bar-chart { margin: 1.5em 0; }
+.bar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.8em;
+}
+.bar-label {
+  width: 4em;
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  text-align: right;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.bar-track {
+  flex: 1;
+  height: 2rem;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), #f97316);
+  transition: width 0.8s var(--transition-easing);
+  display: flex;
+  align-items: center;
+  padding-left: 0.8rem;
+}
+.bar-fill span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+}
+
+/* ========== RANKING LIST ========== */
+.rank-list { margin: 1.5em 0; }
+.rank-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8em 1em;
+  margin-bottom: 0.5em;
+  background: var(--bg-alt);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.rank-number {
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.rank-name { flex: 1; font-size: clamp(0.95rem, 1.5vw, 1.1rem); }
+.rank-value {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ========== COMPARISON LAYOUT ========== */
+.compare-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin: 1.5em 0;
+  align-items: stretch;
+}
+.compare-card {
+  background: var(--bg-alt);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.compare-card .cmp-label {
+  font-size: clamp(1rem, 1.6vw, 1.3rem);
+  font-weight: 600;
+  margin-bottom: 0.8em;
+}
+.compare-card .cmp-number {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+}
+.compare-card .cmp-sub {
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  color: var(--text-secondary);
+  margin-top: 0.5em;
+}
+.compare-card.up .cmp-number { color: #16a34a; }
+.compare-card.down .cmp-number { color: var(--accent); }
+.compare-divider {
+  width: 2px;
+  background: var(--border);
+  align-self: stretch;
+}
+@media (max-width: 768px) {
+  .compare-2 { grid-template-columns: 1fr; gap: 1.5rem; }
+  .compare-divider { display: none; }
+}
+
+/* ========== SUGGESTION LIST ========== */
+.suggest-list { margin: 1.5em 0; }
+.suggest-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1.2em 1.2em;
+  margin-bottom: 0.8em;
+  background: var(--bg-alt);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  align-items: flex-start;
+}
+.suggest-num {
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.suggest-text {
+  flex: 1;
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+  padding-top: 0.25em;
+}
+
+/* ========== STUDENT LIST ========== */
+.student-list { margin: 1.5em 0; }
+.student-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9em 1.2em;
+  margin-bottom: 0.6em;
+  background: var(--bg-alt);
+  border-radius: 12px;
+  border-left: 4px solid var(--accent);
+}
+.student-name {
+  font-weight: 600;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  min-width: 4em;
+}
+.student-desc {
+  color: var(--text-secondary);
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+}
+
+/* ========== DISTRIBUTION CHART ========== */
+.dist-chart { margin: 1.5em 0; }
+.dist-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.7em;
+}
+.dist-label {
+  width: 6em;
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  text-align: right;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.dist-track {
+  flex: 1;
+  height: 2.2rem;
+  background: var(--bg-alt);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+.dist-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #f97316, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.8rem;
+  min-width: 0;
+}
+.dist-fill span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+}
+.dist-count {
+  width: 3em;
+  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  flex-shrink: 0;
+}
+
+/* ========== SLIDE TRANSITIONS ========== */
+/* Default: fade + slide up */
+.trans-fade .slide { transform: none; }
+.trans-fade .slide.active { opacity: 1; }
+
+.trans-slide-left .slide { transform: translateX(30px); }
+.trans-slide-left .slide.active { transform: translateX(0); }
+
+.trans-slide-right .slide { transform: translateX(-30px); }
+.trans-slide-right .slide.active { transform: translateX(0); }
+
+.trans-slide-up .slide { transform: translateY(30px); }
+.trans-slide-up .slide.active { transform: translateY(0); }
+
+.trans-zoom .slide { transform: scale(0.85); }
+.trans-zoom .slide.active { transform: scale(1); }
+
+.trans-flip {
+  perspective: 1200px;
+}
+.trans-flip .slide {
+  transform: rotateX(10deg) translateY(20px);
+  transform-origin: bottom;
+  backface-visibility: hidden;
+}
+.trans-flip .slide.active {
+  transform: rotateX(0) translateY(0);
+}
+
+.trans-none .slide { transform: none; transition: opacity 0.3s ease; }
+
+/* ========== ELEMENT ANIMATIONS ========== */
+/* All animations trigger when parent .slide becomes .active */
+/* Base animation styles */
+.slide [class*="anim-"] {
+  opacity: 0;
+}
+.slide.active [class*="anim-"] {
+  animation-fill-mode: both;
+  animation-timing-function: var(--transition-easing);
+}
+
+/* Fade in */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.slide.active .anim-fade-in { animation-name: fadeIn; animation-duration: 0.6s; }
+
+/* Slide up */
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.slide.active .anim-slide-up { animation-name: slideUp; animation-duration: 0.6s; }
+
+/* Slide down */
+@keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+.slide.active .anim-slide-down { animation-name: slideDown; animation-duration: 0.6s; }
+
+/* Slide left */
+@keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+.slide.active .anim-slide-left { animation-name: slideLeft; animation-duration: 0.6s; }
+
+/* Slide right */
+@keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+.slide.active .anim-slide-right { animation-name: slideRight; animation-duration: 0.6s; }
+
+/* Scale in */
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+.slide.active .anim-scale-in { animation-name: scaleIn; animation-duration: 0.5s; }
+
+/* Rotate in */
+@keyframes rotateIn { from { opacity: 0; transform: rotate(-5deg) scale(0.9); } to { opacity: 1; transform: rotate(0) scale(1); } }
+.slide.active .anim-rotate-in { animation-name: rotateIn; animation-duration: 0.6s; }
+
+/* Blur in */
+@keyframes blurIn { from { opacity: 0; filter: blur(10px); } to { opacity: 1; filter: blur(0); } }
+.slide.active .anim-blur-in { animation-name: blurIn; animation-duration: 0.8s; }
+
+/* Flip in */
+@keyframes flipIn { from { opacity: 0; transform: perspective(600px) rotateX(-20deg); } to { opacity: 1; transform: perspective(600px) rotateX(0); } }
+.slide.active .anim-flip-in { animation-name: flipIn; animation-duration: 0.7s; }
+
+/* Bounce in (subtle) */
+@keyframes bounceIn { 0% { opacity: 0; transform: translateY(40px); } 60% { transform: translateY(-8px); } 80% { transform: translateY(2px); } 100% { opacity: 1; transform: translateY(0); } }
+.slide.active .anim-bounce-in { animation-name: bounceIn; animation-duration: 0.8s; }
+
+/* Typewriter (for text only) */
+.slide.active .anim-typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--accent);
+  width: 0;
+  animation: typewriter 1.5s steps(30) forwards, blink 0.8s step-end infinite;
+}
+@keyframes typewriter { to { width: 100%; } }
+@keyframes blink { 50% { border-color: transparent; } }
+
+/* Highlight (background highlight sweep) */
+@keyframes highlight { from { background-position: 200% center; } to { background-position: 0 center; } }
+.slide.active .anim-highlight {
+  background: linear-gradient(90deg, transparent 0, transparent 40%, rgba(234,88,12,0.12) 40%, rgba(234,88,12,0.12) 60%, transparent 60%, transparent 100%);
+  background-size: 200% 100%;
+  animation: highlight 0.8s var(--transition-easing) forwards;
+}
+
+/* Animation delays (100ms increments) */
+.slide.active .anim-delay-1 { animation-delay: 0.1s; }
+.slide.active .anim-delay-2 { animation-delay: 0.2s; }
+.slide.active .anim-delay-3 { animation-delay: 0.3s; }
+.slide.active .anim-delay-4 { animation-delay: 0.4s; }
+.slide.active .anim-delay-5 { animation-delay: 0.5s; }
+.slide.active .anim-delay-6 { animation-delay: 0.6s; }
+.slide.active .anim-delay-7 { animation-delay: 0.7s; }
+.slide.active .anim-delay-8 { animation-delay: 0.8s; }
+.slide.active .anim-delay-9 { animation-delay: 0.9s; }
+.slide.active .anim-delay-10 { animation-delay: 1.0s; }
+
+/* ========== NAVIGATION ========== */
+.slide-nav {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  border: 1px solid var(--border);
+  z-index: 1000;
+  user-select: none;
+}
+
+.nav-btn {
+  width: 36px; height: 36px;
+  border: none; border-radius: 50%;
+  background: var(--bg-alt);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+.nav-btn:hover { background: var(--accent); color: white; transform: scale(1.05); }
+.nav-btn:active { transform: scale(0.95); }
+.nav-btn:disabled { opacity: 0.3; cursor: default; transform: none; }
+.nav-btn:disabled:hover { background: var(--bg-alt); color: var(--text); }
+
+.nav-dots {
+  display: flex;
+  gap: 6px;
+}
+.nav-dot {
+  width: 8px; height: 8px;
+  border: none; border-radius: 50%;
+  background: var(--border);
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+  padding: 0;
+}
+.nav-dot:hover { transform: scale(1.3); }
+.nav-dot.active { background: var(--accent); transform: scale(1.2); }
+
+.slide-counter {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 3em;
+  text-align: center;
+}
+
+/* Progress bar */
+.slide-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  background: var(--accent);
+  z-index: 1001;
+  transition: width 0.4s var(--transition-easing);
+}
+
+/* ========== REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .slide { transform: none !important; }
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  :root { --slide-padding: 2rem; }
+  .slide-nav { gap: 0.5rem; padding: 0.4rem 0.8rem; }
+}
+@media (max-width: 480px) {
+  :root { --slide-padding: 1.2rem; }
+  .slide h1 { font-size: clamp(1.5rem, 7vw, 2rem); }
+  .slide-nav { bottom: 1rem; }
+  .nav-btn { width: 30px; height: 30px; font-size: 0.9rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="presentation trans-fade" id="presentation">
+
+  <!-- SLIDE: slide-1 -->
+  <section id="slide-1" class="slide active" data-slide="1" role="region" aria-label="Slide 1" aria-hidden="false">
+    <div class="content-center">
+      <h1 class="anim-fade-in">班级成绩分析报告</h1>
+      <p class="anim-fade-in anim-delay-2" style="font-size:1.4em;">二年级（3）班 · 期中考试</p>
+      <p class="anim-fade-in anim-delay-4" style="margin-top:2em;font-size:0.9em;color:var(--text-secondary);">按 <kbd>→</kbd> 或 <kbd>↓</kbd> 开始浏览</p>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-2 -->
+  <section id="slide-2" class="slide" data-slide="2" role="region" aria-label="Slide 2" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">班级核心指标</h2>
+      <div class="grid-2" style="margin-top:1.5rem;">
+        <div class="kpi-card anim-scale-in anim-delay-1">
+          <div class="kpi-number">85.6</div>
+          <div class="kpi-label">班级平均分</div>
+        </div>
+        <div class="kpi-card anim-scale-in anim-delay-2">
+          <div class="kpi-number">98</div>
+          <div class="kpi-label">最高分</div>
+        </div>
+        <div class="kpi-card anim-scale-in anim-delay-3">
+          <div class="kpi-number">42%</div>
+          <div class="kpi-label">优秀率（≥90分）</div>
+        </div>
+        <div class="kpi-card anim-scale-in anim-delay-4">
+          <div class="kpi-number">96%</div>
+          <div class="kpi-label">及格率（≥60分）</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-3 -->
+  <section id="slide-3" class="slide" data-slide="3" role="region" aria-label="Slide 3" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">各科平均分对比</h2>
+      <div class="bar-chart">
+        <div class="bar-row anim-slide-right anim-delay-1">
+          <div class="bar-label">语文</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:86%;"><span>86</span></div>
+          </div>
+        </div>
+        <div class="bar-row anim-slide-right anim-delay-2">
+          <div class="bar-label">数学</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:82%;"><span>82</span></div>
+          </div>
+        </div>
+        <div class="bar-row anim-slide-right anim-delay-3">
+          <div class="bar-label">英语</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:88%;"><span>88</span></div>
+          </div>
+        </div>
+        <div class="bar-row anim-slide-right anim-delay-4">
+          <div class="bar-label">物理</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:79%;"><span>79</span></div>
+          </div>
+        </div>
+        <div class="bar-row anim-slide-right anim-delay-5">
+          <div class="bar-label">化学</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:84%;"><span>84</span></div>
+          </div>
+        </div>
+        <div class="bar-row anim-slide-right anim-delay-6">
+          <div class="bar-label">生物</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:81%;"><span>81</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-4 -->
+  <section id="slide-4" class="slide" data-slide="4" role="region" aria-label="Slide 4" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">各科优秀率排行</h2>
+      <div class="rank-list">
+        <div class="rank-item anim-slide-up anim-delay-1">
+          <div class="rank-number">1</div>
+          <div class="rank-name">英语</div>
+          <div class="rank-value">52%</div>
+        </div>
+        <div class="rank-item anim-slide-up anim-delay-2">
+          <div class="rank-number">2</div>
+          <div class="rank-name">语文</div>
+          <div class="rank-value">48%</div>
+        </div>
+        <div class="rank-item anim-slide-up anim-delay-3">
+          <div class="rank-number">3</div>
+          <div class="rank-name">化学</div>
+          <div class="rank-value">44%</div>
+        </div>
+        <div class="rank-item anim-slide-up anim-delay-4">
+          <div class="rank-number">4</div>
+          <div class="rank-name">生物</div>
+          <div class="rank-value">38%</div>
+        </div>
+        <div class="rank-item anim-slide-up anim-delay-5">
+          <div class="rank-number">5</div>
+          <div class="rank-name">数学</div>
+          <div class="rank-value">35%</div>
+        </div>
+        <div class="rank-item anim-slide-up anim-delay-6">
+          <div class="rank-number">6</div>
+          <div class="rank-name">物理</div>
+          <div class="rank-value">30%</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-5 -->
+  <section id="slide-5" class="slide" data-slide="5" role="region" aria-label="Slide 5" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">分数段分布</h2>
+      <div class="dist-chart">
+        <div class="dist-row anim-slide-right anim-delay-1">
+          <div class="dist-label">90 ~ 100 分</div>
+          <div class="dist-track">
+            <div class="dist-fill" style="width:60%;"><span>12 人</span></div>
+          </div>
+          <div class="dist-count">12</div>
+        </div>
+        <div class="dist-row anim-slide-right anim-delay-2">
+          <div class="dist-label">80 ~ 89 分</div>
+          <div class="dist-track">
+            <div class="dist-fill" style="width:100%;"><span>18 人</span></div>
+          </div>
+          <div class="dist-count">18</div>
+        </div>
+        <div class="dist-row anim-slide-right anim-delay-3">
+          <div class="dist-label">70 ~ 79 分</div>
+          <div class="dist-track">
+            <div class="dist-fill" style="width:44%;"><span>8 人</span></div>
+          </div>
+          <div class="dist-count">8</div>
+        </div>
+        <div class="dist-row anim-slide-right anim-delay-4">
+          <div class="dist-label">60 ~ 69 分</div>
+          <div class="dist-track">
+            <div class="dist-fill" style="width:17%;"><span>3 人</span></div>
+          </div>
+          <div class="dist-count">3</div>
+        </div>
+        <div class="dist-row anim-slide-right anim-delay-5">
+          <div class="dist-label">60 分以下</div>
+          <div class="dist-track">
+            <div class="dist-fill" style="width:11%;"><span>2 人</span></div>
+          </div>
+          <div class="dist-count">2</div>
+        </div>
+      </div>
+      <p class="anim-fade-in anim-delay-6" style="text-align:center;font-size:0.9em;">班级总人数：<strong>43 人</strong></p>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-6 -->
+  <section id="slide-6" class="slide" data-slide="6" role="region" aria-label="Slide 6" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">进退步概况</h2>
+      <div class="compare-2" style="margin-top:1.5rem;">
+        <div class="compare-card up anim-bounce-in anim-delay-1">
+          <div class="cmp-label">进步人数</div>
+          <div class="cmp-number">15 人</div>
+          <div class="cmp-sub">最大进步 <strong>23 分</strong></div>
+        </div>
+        <div class="compare-card down anim-bounce-in anim-delay-3">
+          <div class="cmp-label">退步人数</div>
+          <div class="cmp-number">8 人</div>
+          <div class="cmp-sub">最大退步 <strong>15 分</strong></div>
+        </div>
+      </div>
+      <p class="anim-fade-in anim-delay-5" style="text-align:center;margin-top:1rem;font-size:0.95em;">
+        进步人数远超退步人数，整体呈上升趋势
+      </p>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-7 -->
+  <section id="slide-7" class="slide" data-slide="7" role="region" aria-label="Slide 7" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">重点关注学生</h2>
+      <div class="student-list">
+        <div class="student-item anim-slide-up anim-delay-1">
+          <div class="student-name">张 三</div>
+          <div class="student-desc">成绩波动较大，需关注稳定性</div>
+        </div>
+        <div class="student-item anim-slide-up anim-delay-2">
+          <div class="student-name">李 四</div>
+          <div class="student-desc">连续两次退步，需了解原因</div>
+        </div>
+        <div class="student-item anim-slide-up anim-delay-3">
+          <div class="student-name">王 五</div>
+          <div class="student-desc">数学严重偏科（低于班级平均 20 分）</div>
+        </div>
+        <div class="student-item anim-slide-up anim-delay-4">
+          <div class="student-name">赵 六</div>
+          <div class="student-desc">成绩在及格线边缘，需重点帮扶</div>
+        </div>
+        <div class="student-item anim-slide-up anim-delay-5">
+          <div class="student-name">陈 七</div>
+          <div class="student-desc">缺课较多，需跟进学习进度</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+  <!-- SLIDE: slide-8 -->
+  <section id="slide-8" class="slide" data-slide="8" role="region" aria-label="Slide 8" aria-hidden="true">
+    <div class="content-left">
+      <h2 class="anim-slide-up">改进建议</h2>
+      <div class="suggest-list">
+        <div class="suggest-item anim-slide-up anim-delay-1">
+          <div class="suggest-num">1</div>
+          <div class="suggest-text"><strong>加强物理、数学专项辅导</strong> — 两科平均分偏低，优秀率排名靠后，建议增加专题训练和针对性练习</div>
+        </div>
+        <div class="suggest-item anim-slide-up anim-delay-2">
+          <div class="suggest-num">2</div>
+          <div class="suggest-text"><strong>关注临界生，制定提分计划</strong> — 5 名 60~69 分的学生稍加辅导即可提升，建议一对一制定阶段目标</div>
+        </div>
+        <div class="suggest-item anim-slide-up anim-delay-3">
+          <div class="suggest-num">3</div>
+          <div class="suggest-text"><strong>建立学习互助小组</strong> — 利用英语和语文优势科目的学生带动薄弱科目，形成互助学习氛围</div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- /SLIDE -->
+
+</div>
+
+<!-- Navigation -->
+<nav class="slide-nav" aria-label="幻灯片导航">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)" aria-label="上一页">‹</button>
+  <div class="nav-dots" id="navDots"></div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)" aria-label="下一页">›</button>
+  <span class="slide-counter"><span id="slideCurrent">1</span> / <span id="slideTotal">8</span></span>
+</nav>
+
+<div class="slide-progress" id="slideProgress" style="width:12.5%;"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  var slides = document.querySelectorAll('[data-slide]');
+  var current = 0;
+  var isAnimating = false;
+
+  // Build dots
+  var dotsContainer = document.getElementById('navDots');
+  for (var i = 0; i < slides.length; i++) {
+    var dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', '转到第 ' + (i + 1) + ' 页');
+    dot.onclick = (function(idx) { return function() { goTo(idx); }; })(i);
+    dotsContainer.appendChild(dot);
+  }
+
+  function goTo(index) {
+    if (isAnimating) return;
+    if (index < 0 || index >= slides.length) return;
+    if (index === current) return;
+    isAnimating = true;
+
+    slides[current].classList.remove('active');
+    slides[current].setAttribute('aria-hidden', 'true');
+    slides[index].classList.add('active');
+    slides[index].setAttribute('aria-hidden', 'false');
+    current = index;
+
+    // Update UI
+    document.getElementById('slideCurrent').textContent = current + 1;
+    document.getElementById('slideProgress').style.width = ((current + 1) / slides.length * 100) + '%';
+
+    var dots = dotsContainer.querySelectorAll('.nav-dot');
+    for (var d = 0; d < dots.length; d++) {
+      dots[d].classList.toggle('active', d === current);
+    }
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === slides.length - 1;
+
+    // Update URL hash
+    location.hash = 'slide-' + (current + 1);
+
+    setTimeout(function() { isAnimating = false; }, 500);
+  }
+
+  function navigate(dir) {
+    goTo(current + dir);
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    var key = e.key;
+    if (key === 'ArrowRight' || key === 'ArrowDown' || key === ' ') {
+      e.preventDefault();
+      navigate(1);
+    } else if (key === 'ArrowLeft' || key === 'ArrowUp') {
+      e.preventDefault();
+      navigate(-1);
+    } else if (key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    } else if (key === 'End') {
+      e.preventDefault();
+      goTo(slides.length - 1);
+    }
+  });
+
+  // Mouse wheel navigation
+  var presentation = document.getElementById('presentation');
+  presentation.addEventListener('wheel', function(e) {
+    if (isAnimating) return;
+    var target = e.target;
+    var scrollable = target.closest('[style*="overflow-y: auto"], [style*="overflow: auto"], .slide');
+    if (scrollable && scrollable.scrollHeight > scrollable.clientHeight) {
+      if (e.deltaY > 0 && scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 2) {
+        e.preventDefault();
+        navigate(1);
+      } else if (e.deltaY < 0 && scrollable.scrollTop <= 2) {
+        e.preventDefault();
+        navigate(-1);
+      }
+    } else {
+      e.preventDefault();
+      if (e.deltaY > 0) navigate(1);
+      else navigate(-1);
+    }
+  }, { passive: false });
+
+  // Click on blank space to advance
+  presentation.addEventListener('click', function(e) {
+    if (isAnimating) return;
+    var tag = e.target.tagName;
+    if (tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (e.target.closest('.slide-nav')) return;
+    if (e.target.closest('a, button, input, select, textarea')) return;
+    if (e.target === presentation || e.target.classList.contains('slide') || e.target === document.body) {
+      e.preventDefault();
+      navigate(1);
+    } else {
+      e.preventDefault();
+      navigate(1);
+    }
+  });
+
+  // Touch/swipe support
+  (function() {
+    var startX = 0, startY = 0;
+    var presentation = document.getElementById('presentation');
+    presentation.addEventListener('touchstart', function(e) {
+      startX = e.changedTouches[0].screenX;
+      startY = e.changedTouches[0].screenY;
+    }, { passive: true });
+    presentation.addEventListener('touchend', function(e) {
+      var endX = e.changedTouches[0].screenX;
+      var endY = e.changedTouches[0].screenY;
+      var diffX = startX - endX;
+      var diffY = startY - endY;
+      if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX > 0) navigate(1);
+        else navigate(-1);
+      }
+    }, { passive: true });
+  })();
+
+  // Handle hash on load
+  if (location.hash) {
+    var match = location.hash.match(/slide-(\d+)/);
+    if (match) {
+      var idx = parseInt(match[1], 10) - 1;
+      if (idx >= 0 && idx < slides.length) {
+        goTo(idx);
+      }
+    }
+  }
+
+  window.navigate = navigate;
+  window.goTo = goTo;
+})();
+</script>
+</body>
+</html>
