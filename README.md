@@ -12,12 +12,6 @@ HTML-PPT 是一个专注于创建 PPT 风格全屏网页演示文稿的项目。
 >
 > 本项目目前处于早期实验阶段，代码和功能可能存在各种各样的 BUG 与不完善之处。如果你在使用过程中遇到任何问题，欢迎提交 Issue 反馈，或加入 QQ 交流群 **1092163891** 进行讨论。作者会在时间允许的情况下尽力修复和改进（虽然作者平时比较忙，不一定能及时响应，但尽可能保证每一条反馈都会被看到）。
 
-项目包含的核心部分是：
-
-| 模块 | 说明 |
-|------|------|
-| [ppt-slide-builder](ppt-slide-builder/) | 面向 Claude Code 的 AI Skill，用于**交互式创建和管理** HTML 演示文稿 |
-
 ---
 
 ## ppt-slide-builder
@@ -52,22 +46,6 @@ HTML-PPT 是一个专注于创建 PPT 风格全屏网页演示文稿的项目。
 
 ---
 
-## class-score-analysis
-
-使用 ppt-slide-builder 生成的示例演示项目，展示了一份完整的班级成绩分析报告，包含：
-
-- 班级核心指标（平均分、最高分、优秀率、及格率）
-- 各科平均分对比（柱状图）
-- 各科优秀率排行
-- 分数段分布
-- 进退步概况
-- 重点关注学生
-- 改进建议
-
-该文件可直接在浏览器中打开：[class-score-analysis/index.html](class-score-analysis/index.html)
-
----
-
 ## 项目结构
 
 ```
@@ -84,8 +62,8 @@ HTML-PPT/
 │   └── references/
 │       └── animation-reference.md  # 动画与过渡效果完整参考
 │
-└── class-score-analysis/           # 示例：班级成绩分析报告
-    └── index.html                  # 生成的演示文件
+└── Example/           # 使用本工具生成的演示示例
+
 ```
 
 ---
@@ -155,7 +133,7 @@ limitations under the License.
 
 ## 关联项目
 
-`ppt-slide-builder` Skill 中引用的 prompt-optimizer（提示词优化器）和 web-ui-builder（前端 UI 页面生成器）均为作者的另两个独立 Skill 项目。其余两个由于质量还不稳定，暂时没有开源。
+`ppt-slide-builder` Skill 中引用的 prompt-optimizer（提示词优化器）和 web-ui-builder（前端 UI 页面生成器）均为作者的另两个独立 Skill 项目。
 
 ---
 
