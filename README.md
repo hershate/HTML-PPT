@@ -153,4 +153,10 @@ limitations under the License.
 
 ---
 
+## 关联项目
+
+`ppt-slide-builder` Skill 中引用的 prompt-optimizer（提示词优化器）和 web-ui-builder（前端 UI 页面生成器）均为作者的另两个独立 Skill 项目。其余两个由于质量还不稳定，暂时没有开源。
+
+---
+
 *由 [ppt-slide-builder](ppt-slide-builder/SKILL.md) 驱动 · 基于纯静态 HTML 构建*
