@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 介绍 — 探索编程之美</title>
+<style>
+/* ========== RESET & BASE ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:var(--font-body);background:var(--bg);color:var(--text)}
+a{color:var(--accent);text-decoration:none}
+
+/* ========== THEME ========== */
+:root{
+  --bg:#060e1a;
+  --bg-alt:#0c1a30;
+  --bg-card:rgba(255,255,255,0.04);
+  --text:#e2e8f0;
+  --text-secondary:#8899b4;
+  --accent:#38bdf8;
+  --accent-hover:#7dd3fc;
+  --accent-glow:rgba(56,189,248,0.3);
+  --border:rgba(255,255,255,0.06);
+  --border-light:rgba(255,255,255,0.12);
+  --glass-bg:rgba(255,255,255,0.04);
+  --glass-border:rgba(255,255,255,0.08);
+  --glass-shadow:0 8px 32px rgba(0,0,0,0.3);
+  --font-display:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-body:'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+  --font-mono:'Cascadia Code','Fira Code','JetBrains Mono','Consolas',monospace;
+  --slide-padding:3rem;
+  --transition-duration:0.7s;
+  --transition-easing:cubic-bezier(0.16,1,0.3,1);
+  --perspective:1200px;
+}
+
+/* ========== ANIMATED BACKGROUND (3D ORBS) ========== */
+.bg-orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.bg-orbs .orb{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:0.3;
+  animation:orbFloat 20s ease-in-out infinite;
+}
+.bg-orbs .orb:nth-child(1){
+  width:600px;height:600px;background:radial-gradient(circle,rgba(56,189,248,0.3),transparent);
+  top:-10%;left:-5%;animation-delay:0s;animation-duration:25s;
+}
+.bg-orbs .orb:nth-child(2){
+  width:500px;height:500px;background:radial-gradient(circle,rgba(14,165,233,0.25),transparent);
+  bottom:-15%;right:-8%;animation-delay:-5s;animation-duration:30s;
+}
+.bg-orbs .orb:nth-child(3){
+  width:400px;height:400px;background:radial-gradient(circle,rgba(99,102,241,0.2),transparent);
+  top:40%;left:55%;animation-delay:-10s;animation-duration:22s;
+}
+.bg-orbs .orb:nth-child(4){
+  width:350px;height:350px;background:radial-gradient(circle,rgba(6,182,212,0.2),transparent);
+  top:60%;left:10%;animation-delay:-15s;animation-duration:28s;
+}
+
+@keyframes orbFloat{
+  0%,100%{transform:translate(0,0) scale(1)}
+  25%{transform:translate(60px,-80px) scale(1.1)}
+  50%{transform:translate(-40px,40px) scale(0.9)}
+  75%{transform:translate(80px,60px) scale(1.05)}
+}
+
+/* ========== GRID OVERLAY ========== */
+.bg-grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+  background-size:60px 60px;
+  perspective:var(--perspective);
+}
+
+/* ========== PRESENTATION ========== */
+.presentation{
+  position:relative;width:100%;height:100%;z-index:1;
+  perspective:var(--perspective);
+  overflow:hidden;
+}
+.presentation.trans-fade .slide{transition:opacity var(--transition-duration) var(--transition-easing),transform var(--transition-duration) var(--transition-easing)}
+.presentation.trans-fade .slide.active{opacity:1;transform:translateX(0) scale(1)}
+.presentation.trans-fade .slide:not(.active){opacity:0;transform:translateX(0) scale(0.98);pointer-events:none}
+
+/* ========== SLIDES ========== */
+.slide{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  padding:var(--slide-padding);
+  opacity:0;transform:translateX(0) scale(0.98);
+  transition:opacity var(--transition-duration) var(--transition-easing),
+              transform var(--transition-duration) var(--transition-easing);
+  pointer-events:none;
+  -webkit-overflow-scrolling:touch;
+}
+.slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:auto;z-index:2}
+.slide.prev{opacity:0;transform:translateX(-3%) scale(0.97);z-index:1}
+
+/* ========== GLASS CARD ========== */
+.glass-card{
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(1.4);
+  -webkit-backdrop-filter:blur(24px) saturate(1.4);
+  border:1px solid var(--glass-border);
+  border-radius:1.25rem;
+  box-shadow:var(--glass-shadow),inset 0 1px 0 rgba(255,255,255,0.06);
+  padding:2.5rem 3rem;
+  width:100%;max-width:960px;
+  max-height:calc(100vh - 6rem);
+  overflow-y:auto;
+  transform-style:preserve-3d;
+  transition:transform 0.4s ease,box-shadow 0.4s ease;
+}
+.glass-card:hover{
+  box-shadow:var(--glass-shadow),0 12px 40px rgba(56,189,248,0.08);
+}
+.glass-card::-webkit-scrollbar{width:4px}
+.glass-card::-webkit-scrollbar-track{background:transparent}
+.glass-card::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:2px}
+
+/* Card 3D tilt */
+.card-tilt{transition:transform 0.15s ease-out;transform-style:preserve-3d}
+
+/* ========== TYPOGRAPHY ========== */
+.slide h1{
+  font-family:var(--font-display);font-size:clamp(2.2rem,5vw,3.8rem);
+  font-weight:800;letter-spacing:-0.03em;
+  background:linear-gradient(135deg,#e2e8f0 0%,#38bdf8 50%,#7dd3fc 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:0.5rem;
+}
+.slide .subtitle{
+  font-size:clamp(1rem,2vw,1.35rem);color:var(--text-secondary);
+  font-weight:300;letter-spacing:0.05em;margin-bottom:1.5rem;
+}
+.slide h2{
+  font-family:var(--font-display);font-size:clamp(1.4rem,3vw,2rem);
+  font-weight:700;color:var(--text);margin-bottom:1rem;
+}
+.slide h3{
+  font-family:var(--font-display);font-size:clamp(1.1rem,2vw,1.4rem);
+  font-weight:600;color:var(--accent);margin-bottom:0.6rem;
+}
+.slide p{font-size:clamp(0.95rem,1.5vw,1.1rem);line-height:1.7;color:var(--text-secondary);margin-bottom:0.8rem}
+.slide .text-gradient{
+  background:linear-gradient(135deg,#38bdf8,#818cf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+/* ========== LAYOUT HELPERS ========== */
+.content-center{text-align:center}
+.content-left{text-align:left;width:100%}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;margin-top:1rem}
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+
+/* ========== FEATURE CARDS ========== */
+.feature-card{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:0.875rem;padding:1.2rem 1.5rem;
+  transition:all 0.3s ease;transform-style:preserve-3d;
+  backdrop-filter:blur(8px);
+}
+.feature-card:hover{
+  border-color:var(--accent);background:rgba(56,189,248,0.05);
+  transform:translateY(-3px) scale(1.02);
+  box-shadow:0 8px 24px rgba(56,189,248,0.1);
+}
+.feature-card .icon{font-size:1.8rem;margin-bottom:0.5rem;display:block}
+.feature-card h4{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.3rem}
+.feature-card p{font-size:0.85rem;color:var(--text-secondary);margin:0}
+
+/* ========== LISTS ========== */
+.slide ul{list-style:none;padding:0}
+.slide ul li{
+  padding:0.4rem 0;padding-left:1.5rem;position:relative;
+  font-size:clamp(0.9rem,1.4vw,1.05rem);color:var(--text-secondary);line-height:1.6;
+}
+.slide ul li::before{
+  content:'▸';position:absolute;left:0;color:var(--accent);font-weight:bold;
+}
+.slide ul li strong{color:var(--text)}
+
+/* ========== TIMELINE ========== */
+.timeline{position:relative;padding-left:2rem;margin-top:1rem}
+.timeline::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--accent),transparent)}
+.timeline-item{position:relative;padding:0.6rem 0 0.6rem 1rem;border-left:2px solid var(--border);margin-left:-1rem;padding-left:1.5rem}
+.timeline-item .year{font-family:var(--font-mono);color:var(--accent);font-size:0.85rem;font-weight:600}
+.timeline-item p{margin:0.2rem 0 0;font-size:0.95rem}
+
+/* ========== STAT NUMBER ========== */
+.stat-number{font-size:clamp(2.5rem,4vw,3.5rem);font-weight:800;font-family:var(--font-display);
+  background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;background-clip:text;line-height:1.2}
+.stat-label{font-size:0.9rem;color:var(--text-secondary);margin-top:0.2rem}
+
+/* ========== CODE EDITOR ========== */
+.code-editor{
+  background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.08);
+  border-radius:0.75rem;overflow:hidden;margin:1rem 0;
+  box-shadow:0 4px 24px rgba(0,0,0,0.3);backdrop-filter:blur(12px);
+}
+.code-editor .editor-header{
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.6rem 1rem;background:rgba(0,0,0,0.3);
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.code-editor .editor-dot{width:10px;height:10px;border-radius:50%}
+.code-editor .editor-dot:nth-child(1){background:#ff5f57}
+.code-editor .editor-dot:nth-child(2){background:#febc2e}
+.code-editor .editor-dot:nth-child(3){background:#28c840}
+.code-editor .editor-title{font-size:0.78rem;color:var(--text-secondary);margin-left:0.5rem}
+.code-editor textarea{
+  width:100%;min-height:160px;padding:1rem;
+  font-family:var(--font-mono);font-size:clamp(0.78rem,1.2vw,0.9rem);
+  line-height:1.65;color:#e2e8f0;background:transparent;
+  border:none;outline:none;resize:vertical;
+  tab-size:4;white-space:pre;overflow-x:auto;
+}
+.code-editor textarea::placeholder{color:rgba(255,255,255,0.2)}
+.code-editor .editor-footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.5rem 1rem;background:rgba(0,0,0,0.2);
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+.run-btn{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  padding:0.4rem 1.2rem;border:none;border-radius:0.5rem;
+  font-family:var(--font-body);font-size:0.85rem;font-weight:600;
+  background:linear-gradient(135deg,#38bdf8,#0ea5e9);color:#fff;
+  cursor:pointer;transition:all 0.3s ease;
+}
+.run-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(56,189,248,0.3)}
+.run-btn:active{transform:translateY(0)}
+.run-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.code-output{
+  padding:1rem;font-family:var(--font-mono);font-size:0.85rem;
+  line-height:1.5;color:#a5f3fc;background:rgba(0,0,0,0.25);
+  min-height:60px;max-height:200px;overflow-y:auto;white-space:pre-wrap;
+  border-top:1px solid rgba(255,255,255,0.04);
+}
+.code-output .error{color:#fc8181}
+.code-output .prompt{color:var(--text-secondary)}
+
+/* ========== PAGE NAVIGATION ========== */
+.slide-nav{
+  position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:1rem;
+  background:color-mix(in srgb,var(--bg-alt) 85%,transparent);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:2rem;
+  padding:0.5rem 1.2rem;z-index:100;
+  box-shadow:0 4px 24px rgba(0,0,0,0.3);
+}
+.slide-nav button{
+  width:36px;height:36px;border-radius:50%;border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);color:var(--text-secondary);
+  font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all 0.25s ease;
+}
+.slide-nav button:hover{background:rgba(56,189,248,0.15);border-color:var(--accent);color:var(--accent)}
+.slide-nav button:active{transform:scale(0.92)}
+.slide-nav .page-info{font-size:0.85rem;color:var(--text-secondary);min-width:60px;text-align:center;font-family:var(--font-mono)}
+.slide-nav .page-info .current{color:var(--text);font-weight:600}
+
+/* Progress bar */
+.slide-progress{
+  position:fixed;top:0;left:0;height:3px;
+  background:linear-gradient(90deg,#38bdf8,#818cf8);
+  z-index:200;transition:width 0.5s var(--transition-easing);
+  width:7.14%;
+}
+
+/* ========== BADGE ========== */
+.badge{
+  display:inline-block;padding:0.2rem 0.8rem;border-radius:2rem;
+  font-size:0.78rem;font-weight:500;
+  background:rgba(56,189,248,0.15);color:var(--accent);
+  border:1px solid rgba(56,189,248,0.2);
+  margin-right:0.5rem;margin-bottom:0.5rem;
+}
+
+/* Version badge */
+.version-badge{display:inline-block;padding:0.15rem 0.6rem;border-radius:0.3rem;font-size:0.75rem;font-weight:600;font-family:var(--font-mono);background:rgba(56,189,248,0.12);color:var(--accent);border:1px solid rgba(56,189,248,0.15);vertical-align:middle;margin-left:0.3rem}
+
+/* ========== ELEMENT ANIMATIONS ========== */
+.anim-fade-in{animation:animFadeIn 0.6s var(--transition-easing) both}
+.anim-slide-up{animation:animSlideUp 0.6s var(--transition-easing) both}
+.anim-slide-down{animation:animSlideDown 0.6s var(--transition-easing) both}
+.anim-scale-in{animation:animScaleIn 0.5s var(--transition-easing) both}
+.anim-bounce-in{animation:animBounceIn 0.6s var(--transition-easing) both}
+.anim-float{animation:animFloat 3s ease-in-out infinite}
+
+@keyframes animFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes animSlideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes animSlideDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes animScaleIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+@keyframes animBounceIn{
+  0%{opacity:0;transform:scale(0.5)}
+  60%{transform:scale(1.05)}
+  100%{opacity:1;transform:scale(1)}
+}
+@keyframes animFloat{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-10px)}
+}
+
+.anim-delay-1{animation-delay:0.1s}
+.anim-delay-2{animation-delay:0.2s}
+.anim-delay-3{animation-delay:0.3s}
+.anim-delay-4{animation-delay:0.4s}
+.anim-delay-5{animation-delay:0.5s}
+.anim-delay-6{animation-delay:0.6s}
+.anim-delay-7{animation-delay:0.7s}
+.anim-delay-8{animation-delay:0.8s}
+.anim-delay-9{animation-delay:0.9s}
+.anim-delay-10{animation-delay:1.0s}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;transition-duration:0.01ms !important}
+}
+
+/* ========== RESPONSIVE ========== */
+@media(max-width:768px){
+  :root{--slide-padding:1.5rem}
+  .glass-card{padding:1.5rem;border-radius:1rem;max-height:calc(100vh - 5rem)}
+  .slide-nav{padding:0.3rem 0.8rem;gap:0.6rem}
+  .slide-nav button{width:32px;height:32px;font-size:0.9rem}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .code-editor textarea{min-height:120px;font-size:0.75rem}
+}
+
+/* ========== PYTHON LOGO ANIMATION ========== */
+.python-logo{font-size:clamp(4rem,10vw,8rem);display:inline-block;animation:logoFloat 4s ease-in-out infinite}
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  33%{transform:translateY(-12px) rotate(-2deg)}
+  66%{transform:translateY(-4px) rotate(2deg)}
+}
+
+/* Glow ring */
+.glow-ring{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+}
+.glow-ring::before{
+  content:'';position:absolute;width:130%;height:130%;
+  border-radius:50%;border:2px solid rgba(56,189,248,0.15);
+  animation:ringPulse 3s ease-in-out infinite;
+}
+@keyframes ringPulse{
+  0%,100%{transform:scale(1);opacity:0.5}
+  50%{transform:scale(1.15);opacity:0.2}
+}
+
+/* ========== ECOSYSTEM ICON ROW ========== */
+.eco-icons{display:flex;flex-wrap:wrap;gap:0.6rem;justify-content:center;margin:1rem 0}
+.eco-icon{
+  display:flex;align-items:center;gap:0.3rem;
+  padding:0.35rem 0.8rem;border-radius:0.5rem;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  font-size:0.82rem;color:var(--text-secondary);transition:all 0.3s;
+}
+.eco-icon:hover{border-color:var(--accent);color:var(--text);background:rgba(56,189,248,0.06)}
+.eco-icon .ei-logo{font-size:1.1rem}
+
+/* ========== LOADING OVERLAY ========== */
+#pyodide-loading{
+  position:fixed;inset:0;z-index:9999;
+  background:var(--bg);display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:1.5rem;
+}
+#pyodide-loading.show{display:flex}
+#pyodide-loading .spinner{
+  width:48px;height:48px;border:3px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pyodide-loading .load-text{color:var(--text-secondary);font-size:0.95rem}
+#pyodide-loading .load-bar{
+  width:240px;height:4px;border-radius:2px;background:var(--border);overflow:hidden;
+}
+#pyodide-loading .load-bar-inner{
+  height:100%;width:0%;border-radius:2px;
+  background:linear-gradient(90deg,#38bdf8,#818cf8);
+  transition:width 0.3s ease;
+}
+
+/* ========== END SLIDE SPECIAL ========== */
+.end-quote{font-size:clamp(1.2rem,2.5vw,1.8rem);font-style:italic;color:var(--text-secondary);line-height:1.6;margin:1rem 0}
+.end-quote cite{display:block;margin-top:0.5rem;font-size:0.9rem;color:var(--text-secondary);font-style:normal}
+
+/* ========== 3D FLOATING TAG CLOUD ========== */
+.tag-cloud{display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin:1rem 0;perspective:800px}
+.tag-cloud span{
+  display:inline-block;padding:0.3rem 0.9rem;border-radius:2rem;
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  font-size:0.85rem;color:var(--text-secondary);
+  transition:all 0.3s ease;cursor:default;
+}
+.tag-cloud span:hover{
+  background:rgba(56,189,248,0.1);border-color:var(--accent);
+  color:var(--accent);transform:translateZ(20px) scale(1.05);
+}
+
+/* Click hint at bottom of slides */
+.click-hint{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);font-size:0.72rem;color:rgba(255,255,255,0.15);letter-spacing:0.05em;white-space:nowrap}
+
+/* ========== Slide-specific full-image backgrounds ========== */
+.slide-bg-glow::after{
+  content:'';position:absolute;width:300px;height:300px;
+  border-radius:50%;background:radial-gradient(circle,rgba(56,189,248,0.06),transparent);
+  top:20%;right:5%;pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- Background orbs -->
+<div class="bg-orbs">
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+</div>
+<div class="bg-grid"></div>
+
+<!-- Progress bar -->
+<div class="slide-progress" id="slideProgress" style="width:7.14%"></div>
+
+<!-- Pyodide Loading Overlay -->
+<div id="pyodide-loading">
+  <div class="spinner"></div>
+  <div class="load-text">⏳ 正在加载 Python 运行环境...</div>
+  <div class="load-bar"><div class="load-bar-inner" id="loadBarInner"></div></div>
+  <div style="font-size:0.8rem;color:var(--text-secondary);opacity:0.6">首次加载需下载约 12MB，请耐心等待</div>
+</div>
+
+<div class="presentation trans-fade" id="presentation">
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-1 — TITLE -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-1 -->
+<section id="slide-1" class="slide active" data-slide="1" role="region" aria-label="Slide 1" aria-hidden="false">
+  <div class="glass-card content-center card-tilt" style="max-width:800px;padding:3.5rem">
+    <div class="glow-ring" style="margin-bottom:0.5rem">
+      <div class="python-logo">🐍</div>
+    </div>
+    <h1 class="anim-fade-in" style="margin-top:0.5rem">Python</h1>
+    <p class="subtitle anim-slide-up anim-delay-1" style="font-size:clamp(1.1rem,2.5vw,1.6rem)">
+      探索编程之美 · 开启高效开发之旅
+    </p>
+    <div style="margin-top:1.5rem" class="anim-slide-up anim-delay-2">
+      <span class="badge">简洁优雅</span>
+      <span class="badge">全能生态</span>
+      <span class="badge">AI 首选</span>
+      <span class="badge">全球 Top 3</span>
+    </div>
+    <div style="margin-top:2rem;font-size:0.8rem;color:var(--text-secondary);opacity:0.5" class="anim-fade-in anim-delay-3">
+      ▼ 按 ↓ Space 或 滚动 开始浏览
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-2 — HISTORY -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-2 -->
+<section id="slide-2" class="slide" data-slide="2" role="region" aria-label="Slide 2" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">📜 Python 简史</h2>
+    <p class="anim-fade-in anim-delay-1" style="font-size:0.95rem">从荷兰圣诞假期的个人项目，到全球最受欢迎的编程语言之一</p>
+    <div class="timeline">
+      <div class="timeline-item anim-slide-up anim-delay-1">
+        <span class="year">1989 年 12 月</span>
+        <p>Guido van Rossum 在荷兰阿姆斯特丹开始开发 Python，作为 ABC 语言的继承者</p>
+      </div>
+      <div class="timeline-item anim-slide-up anim-delay-2">
+        <span class="year">1991 年</span>
+        <p>Python 0.9.0 发布——已包含异常处理、函数和核心数据类型</p>
+      </div>
+      <div class="timeline-item anim-slide-up anim-delay-3">
+        <span class="year">1994 年</span>
+        <p>Python 1.0 正式发布，引入 <code>lambda</code>、<code>map</code>、<code>filter</code> 等函数式特性</p>
+      </div>
+      <div class="timeline-item anim-slide-up anim-delay-4">
+        <span class="year">2000 年</span>
+        <p>Python 2.0 发布——加入列表推导式、垃圾回收、Unicode 支持</p>
+      </div>
+      <div class="timeline-item anim-slide-up anim-delay-5">
+        <span class="year">2008 年</span>
+        <p>Python 3.0 发布——重大升级，不向后兼容（"清理工具箱"）</p>
+      </div>
+      <div class="timeline-item anim-slide-up anim-delay-6">
+        <span class="year">2020 年</span>
+        <p>Python 2 正式退役，Python 3 成为唯一版本 · TIOBE 年度编程语言</p>
+      </div>
+      <div class="timeline-item anim-slide-up anim-delay-7">
+        <span class="year">2024 至今</span>
+        <p>Python 3.13 发布 · 全球开发者超 1500 万 · AI/ML 领域第一语言</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-3 — DESIGN PHILOSOPHY -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-3 -->
+<section id="slide-3" class="slide" data-slide="3" role="region" aria-label="Slide 3" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">🎯 设计哲学</h2>
+    <p class="anim-fade-in anim-delay-1">Python 之禅 <span style="font-family:var(--font-mono);color:var(--accent);font-size:0.85rem">>>> import this</span></p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1">
+        <div class="icon">✨</div>
+        <h4>优美胜于丑陋</h4>
+        <p>代码应当优雅可读，而非晦涩难懂</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2">
+        <div class="icon">📖</div>
+        <h4>明确胜于隐晦</h4>
+        <p>显式优于隐式，让代码意图一目了然</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3">
+        <div class="icon">🧩</div>
+        <h4>简洁胜于复杂</h4>
+        <p>优先选择简单直接的实现方式</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4">
+        <div class="icon">🌊</div>
+        <h4>扁平胜于嵌套</h4>
+        <p>减少嵌套层级，保持代码结构平坦</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-5">
+        <div class="icon">🔀</div>
+        <h4>特殊案例不足以打破规则</h4>
+        <p>保持一致性，例外应有充分理由</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-6">
+        <div class="icon">🎯</div>
+        <h4>恰如其实</h4>
+        <p>用最简单的方式解决问题，不多不少</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-4 — CORE FEATURES -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-4 -->
+<section id="slide-4" class="slide" data-slide="4" role="region" aria-label="Slide 4" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">⚙️ 核心特性</h2>
+    <p class="anim-fade-in anim-delay-1">Python 为什么如此特别？</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1">
+        <div class="icon">🐢</div>
+        <h4>动态类型 <span class="version-badge">duck typing</span></h4>
+        <p>变量无需声明类型，运行时自动推断，编写速度极快</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2">
+        <div class="icon">⚡</div>
+        <h4>解释执行 <span class="version-badge">CPython</span></h4>
+        <p>无需编译即可运行，修改立即可见，迭代速度极快</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3">
+        <div class="icon">🧹</div>
+        <h4>自动内存管理 <span class="version-badge">GC</span></h4>
+        <p>引用计数 + 分代垃圾回收，开发者无需手动管理内存</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4">
+        <div class="icon">🌍</div>
+        <h4>跨平台 <span class="version-badge">Win/Mac/Linux</span></h4>
+        <p>同一份代码可运行在 Windows、macOS、Linux 等任何平台</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-5">
+        <div class="icon">🧰</div>
+        <h4>海量标准库 <span class="version-badge">batteries included</span></h4>
+        <p>自带上百个内置模块，开箱即用，无需安装第三方包</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-6">
+        <div class="icon">🔌</div>
+        <h4>扩展性强 <span class="version-badge">C/Rust 扩展</span></h4>
+        <p>可调用 C/C++/Rust 库，性能关键部分可用底层语言编写</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-5 — APPLICATIONS OVERVIEW -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-5 -->
+<section id="slide-5" class="slide" data-slide="5" role="region" aria-label="Slide 5" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">🌐 Python 能做什么？</h2>
+    <p class="anim-fade-in anim-delay-1">覆盖现代软件开发的几乎每个领域</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1" style="text-align:center">
+        <div class="icon" style="font-size:2.2rem">🌐</div>
+        <h4>Web 开发</h4>
+        <p style="font-size:0.8rem">Django · Flask · FastAPI · 全球 Top 500 网站中 20% 使用 Python</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2" style="text-align:center">
+        <div class="icon" style="font-size:2.2rem">📊</div>
+        <h4>数据科学</h4>
+        <p style="font-size:0.8rem">NumPy · Pandas · Matplotlib · 数据科学生态无可替代</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3" style="text-align:center">
+        <div class="icon" style="font-size:2.2rem">🤖</div>
+        <h4>AI / 机器学习</h4>
+        <p style="font-size:0.8rem">PyTorch · TensorFlow · scikit-learn · AI 时代的第一语言</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4" style="text-align:center">
+        <div class="icon" style="font-size:2.2rem">🛠️</div>
+        <h4>自动化与脚本</h4>
+        <p style="font-size:0.8rem">自动化办公 · 爬虫 · DevOps · CI/CD · 测试框架</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-5" style="text-align:center">
+        <div class="icon" style="font-size:2.2rem">🎮</div>
+        <h4>游戏开发</h4>
+        <p style="font-size:0.8rem">Pygame · Panda3D · Godot (GDScript 基于 Python)</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-6" style="text-align:center">
+        <div class="icon" style="font-size:2.2rem">🔬</div>
+        <h4>科学计算</h4>
+        <p style="font-size:0.8rem">SciPy · SymPy · BioPython · 学术研究的标准工具</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-6 — WEB DEVELOPMENT -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-6 -->
+<section id="slide-6" class="slide" data-slide="6" role="region" aria-label="Slide 6" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">🌐 Python Web 开发生态</h2>
+    <p class="anim-fade-in anim-delay-1">从个人博客到千万级并发站点，Python 都能胜任</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1">
+        <div class="icon">🏗️</div>
+        <h4>Django <span class="version-badge">"包含一切"</span></h4>
+        <p>全功能 Web 框架，自带 ORM、Admin、Auth、模板引擎。Instagram、Pinterest 都在用</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2">
+        <div class="icon">🧪</div>
+        <h4>Flask <span class="version-badge">"轻量灵活"</span></h4>
+        <p>微型框架，极简核心 + 丰富扩展。适合微服务、API、快速原型</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3">
+        <div class="icon">⚡</div>
+        <h4>FastAPI <span class="version-badge">"高性能"</span></h4>
+        <p>异步优先，自动生成 OpenAPI 文档，性能媲美 Node.js/Go</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4">
+        <div class="icon">🔧</div>
+        <h4>更多工具</h4>
+        <p>Tornado（异步网络库）· Sanic（异步框架）· Starlette（ASGI 工具包）· aiohttp</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-7 — DATA SCIENCE & AI -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-7 -->
+<section id="slide-7" class="slide" data-slide="7" role="region" aria-label="Slide 7" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">🤖 Python + AI：天作之合</h2>
+    <p class="anim-fade-in anim-delay-1">数据科学与人工智能领域无可争议的王者</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1">
+        <div class="icon">🔢</div>
+        <h4>NumPy <span class="version-badge">数值计算基础</span></h4>
+        <p>N 维数组、线性代数、傅里叶变换，几乎所有数据科学库的基石</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2">
+        <div class="icon">📋</div>
+        <h4>Pandas <span class="version-badge">数据处理利器</span></h4>
+        <p>DataFrame 操作，类似 Excel 但强大百倍，数据清洗/转换/分析</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3">
+        <div class="icon">📈</div>
+        <h4>Matplotlib / Seaborn</h4>
+        <p>出版级数据可视化，从折线图到热力图，一应俱全</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4">
+        <div class="icon">🧠</div>
+        <h4>PyTorch / TensorFlow</h4>
+        <p>深度学习双雄，驱动 ChatGPT、Stable Diffusion 等革命性 AI</p>
+      </div>
+    </div>
+    <div style="margin-top:1rem;text-align:center" class="anim-fade-in anim-delay-5">
+      <span class="badge">#1 数据科学语言</span>
+      <span class="badge">Kaggle 首选</span>
+      <span class="badge">LLM 核心栈</span>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-8 — AUTOMATION -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-8 -->
+<section id="slide-8" class="slide" data-slide="8" role="region" aria-label="Slide 8" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">⚡ 自动化 & 脚本</h2>
+    <p class="anim-fade-in anim-delay-1">Python 让重复的工作自动完成</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1">
+        <div class="icon">🕷️</div>
+        <h4>网络爬虫</h4>
+        <p>Requests + BeautifulSoup / Scrapy —— 轻松抓取网页数据</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2">
+        <div class="icon">📄</div>
+        <h4>自动化办公</h4>
+        <p>openpyxl (Excel) · python-docx (Word) · PDFPlumber · 批量处理文件</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3">
+        <div class="icon">📧</div>
+        <h4>邮件 & 通知</h4>
+        <p>smtplib + 定时任务 = 自动报表、监控告警、每日摘要</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4">
+        <div class="icon">☁️</div>
+        <h4>DevOps 自动化</h4>
+        <p>Ansible · Fabric · AWS CDK (CDKTF) · 云基础设施即代码</p>
+      </div>
+    </div>
+    <div style="margin-top:1rem;padding:0.8rem 1.2rem;background:rgba(0,0,0,0.2);border-radius:0.6rem;border:1px solid var(--border)" class="anim-slide-up anim-delay-5">
+      <code style="font-family:var(--font-mono);font-size:0.8rem;color:var(--text-secondary)">
+        <span style="color:#38bdf8"># 5 行代码批量重命名文件</span><br>
+        <span style="color:#a5f3fc">import</span> os<br>
+        <span style="color:#a5f3fc">for</span> f <span style="color:#a5f3fc">in</span> os.listdir(<span style="color:#f472b6">'.'</span>):<br>
+        &nbsp;&nbsp;<span style="color:#a5f3fc">if</span> f.endswith(<span style="color:#f472b6">'.jpg'</span>): os.rename(f, <span style="color:#f472b6">f'photo_{f}'</span>)
+      </code>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-9 — CODE DEMO 1: BASICS -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-9 -->
+<section id="slide-9" class="slide" data-slide="9" role="region" aria-label="Slide 9" aria-hidden="true">
+  <div class="glass-card card-tilt" style="max-width:960px">
+    <h2 class="anim-slide-down">🔢 Python 代码演示 ① — 基础语法</h2>
+    <p class="anim-fade-in anim-delay-1" style="font-size:0.9rem">点击 ▶ 运行按钮，在浏览器中执行 Python 代码 🚀</p>
+    <div class="code-editor anim-slide-up anim-delay-2">
+      <div class="editor-header">
+        <span class="editor-dot"></span><span class="editor-dot"></span><span class="editor-dot"></span>
+        <span class="editor-title">demo_basics.py</span>
+      </div>
+      <textarea id="code-9" spellcheck="false"># === Python 基础语法 ===
+
+# 1. 变量与类型
+name = "Python"
+birth_year = 1991
+version = 3.13
+is_awesome = True
+print(f"你好, {name}!")
+print(f"生于 {birth_year}，版本 {version}，是否优秀？{is_awesome}")
+
+print("─" * 40)
+
+# 2. 列表与循环
+languages = ["Python", "JavaScript", "Rust", "Go", "TypeScript"]
+for lang in languages:
+    stars = "⭐" * (len(lang) % 5 + 1)
+    print(f"{stars} 我热爱 {lang}")
+
+print("─" * 40)
+
+# 3. 函数定义
+def fibonacci(n):
+    """生成斐波那契数列的前 n 项"""
+    a, b = 0, 1
+    result = []
+    for _ in range(n):
+        result.append(a)
+        a, b = b, a + b
+    return result
+
+print(f"斐波那契前 10 项：{fibonacci(10)}")
+
+print("─" * 40)
+
+# 4. 列表推导式
+squares = [x**2 for x in range(1, 11)]
+print(f"1-10 的平方：{squares}")</textarea>
+      <div class="editor-footer">
+        <button class="run-btn" onclick="runCode(9)">▶ 运行代码</button>
+        <span style="font-size:0.75rem;color:var(--text-secondary)">⚡ 浏览器内执行</span>
+      </div>
+      <div class="code-output" id="output-9">
+        <span class="prompt">点击「▶ 运行代码」查看输出结果</span>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-10 — CODE DEMO 2: DATA -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-10 -->
+<section id="slide-10" class="slide" data-slide="10" role="region" aria-label="Slide 10" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">📊 Python 代码演示 ② — 数据分析</h2>
+    <p class="anim-fade-in anim-delay-1" style="font-size:0.9rem">展示 Python 处理数据的能力（无需任何第三方库）</p>
+    <div class="code-editor anim-slide-up anim-delay-2">
+      <div class="editor-header">
+        <span class="editor-dot"></span><span class="editor-dot"></span><span class="editor-dot"></span>
+        <span class="editor-title">demo_data.py</span>
+      </div>
+      <textarea id="code-10" spellcheck="false"># === Python 数据处理演示 ===
+
+# 某团队季度销售数据
+sales_data = [
+    {"季度": "Q1", "销售额": 128000, "增长率": 0.12},
+    {"季度": "Q2", "销售额": 152000, "增长率": 0.19},
+    {"季度": "Q3", "销售额": 185000, "增长率": 0.22},
+    {"季度": "Q4", "销售额": 210000, "增长率": 0.14},
+]
+
+print("📈 年度销售报告")
+print("=" * 45)
+
+total = 0
+for item in sales_data:
+    q = item["季度"]
+    s = item["销售额"]
+    g = item["增长率"]
+    total += s
+    bar = "█" * int(s / 8000)
+    print(f"{q} | {bar} ¥{s:,}  (+{g:.0%})")
+
+print("=" * 45)
+avg = total / len(sales_data)
+print(f"📊 年销售额：¥{total:,}")
+print(f"📊 季度平均：¥{avg:,.0f}")
+print(f"📊 最高季度：Q{sales_data[2]['季度']} ¥{sales_data[2]['销售额']:,}")
+print(f"📊 平均增长率：{(0.12+0.19+0.22+0.14)/4:.1%}")
+
+print("─" * 45)
+
+# 用字典统计
+word = "python programming"
+freq = {}
+for ch in word:
+    if ch != " ":
+        freq[ch] = freq.get(ch, 0) + 1
+
+print(f"\n🔤 字符频率统计：「{word}」")
+for char, count in sorted(freq.items()):
+    print(f"  '{char}': {'█' * count} ({count})")</textarea>
+      <div class="editor-footer">
+        <button class="run-btn" onclick="runCode(10)">▶ 运行代码</button>
+        <span style="font-size:0.75rem;color:var(--text-secondary)">⚡ 浏览器内执行</span>
+      </div>
+      <div class="code-output" id="output-10">
+        <span class="prompt">点击「▶ 运行代码」查看输出结果</span>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-11 — CODE DEMO 3: FUN -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-11 -->
+<section id="slide-11" class="slide" data-slide="11" role="region" aria-label="Slide 11" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">🎮 Python 代码演示 ③ — 趣味案例</h2>
+    <p class="anim-fade-in anim-delay-1" style="font-size:0.9rem">看 Python 如何用几行代码实现经典算法</p>
+    <div class="code-editor anim-slide-up anim-delay-2">
+      <div class="editor-header">
+        <span class="editor-dot"></span><span class="editor-dot"></span><span class="editor-dot"></span>
+        <span class="editor-title">demo_fun.py</span>
+      </div>
+      <textarea id="code-11" spellcheck="false"># === Python 趣味编程 ===
+
+print("🎲 1. 质数判断器")
+print("─" * 35)
+
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(n ** 0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+primes = [n for n in range(1, 101) if is_prime(n)]
+print(f"1-100 之间的质数有 {len(primes)} 个：")
+print(primes)
+
+print("\n🎨 2. 打印乘法表")
+print("─" * 35)
+for i in range(1, 10):
+    row = ""
+    for j in range(1, i + 1):
+        row += f"{j}×{i}={i*j:2d}  "
+    print(row)
+
+print("\n🔄 3. 回文字符串检测")
+print("─" * 35)
+
+def is_palindrome(s):
+    s = s.lower().replace(" ", "")
+    return s == s[::-1]
+
+tests = ["上海自来水来自海上", "Python", "racecar", "hello"]
+for t in tests:
+    result = "✅ 是回文" if is_palindrome(t) else "❌ 不是回文"
+    print(f"「{t}」→ {result}")</textarea>
+      <div class="editor-footer">
+        <button class="run-btn" onclick="runCode(11)">▶ 运行代码</button>
+        <span style="font-size:0.75rem;color:var(--text-secondary)">⚡ 浏览器内执行</span>
+      </div>
+      <div class="code-output" id="output-11">
+        <span class="prompt">点击「▶ 运行代码」查看输出结果</span>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-12 — ECOSYSTEM -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-12 -->
+<section id="slide-12" class="slide" data-slide="12" role="region" aria-label="Slide 12" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">📦 Python 生态圈</h2>
+    <p class="anim-fade-in anim-delay-1">全球最大的开发者生态之一</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1" style="text-align:center">
+        <div style="font-size:3rem;font-weight:800;font-family:var(--font-display);background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">500k+</div>
+        <p style="font-size:0.85rem;margin-top:0.3rem">PyPI 上的包总数</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2" style="text-align:center">
+        <div style="font-size:3rem;font-weight:800;font-family:var(--font-display);background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">15M+</div>
+        <p style="font-size:0.85rem;margin-top:0.3rem">全球开发者</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3" style="text-align:center">
+        <div style="font-size:3rem;font-weight:800;font-family:var(--font-display);background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">#1</div>
+        <p style="font-size:0.85rem;margin-top:0.3rem">IEEE Spectrum 排行</p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4" style="text-align:center">
+        <div style="font-size:3rem;font-weight:800;font-family:var(--font-display);background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">30yr+</div>
+        <p style="font-size:0.85rem;margin-top:0.3rem">持续发展 30+ 年</p>
+      </div>
+    </div>
+    <div style="margin-top:1rem" class="anim-fade-in anim-delay-5">
+      <p style="font-size:0.9rem;text-align:center;color:var(--text-secondary)">大厂支持：Google · Meta · Microsoft · Netflix · Spotify · NASA · CERN ✨</p>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-13 — LEARNING PATH -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-13 -->
+<section id="slide-13" class="slide" data-slide="13" role="region" aria-label="Slide 13" aria-hidden="true">
+  <div class="glass-card card-tilt">
+    <h2 class="anim-slide-down">🗺️ Python 学习路线图</h2>
+    <p class="anim-fade-in anim-delay-1">从零基础到专业开发者</p>
+    <div class="grid-2" style="margin-top:0.8rem">
+      <div class="feature-card anim-slide-up anim-delay-1">
+        <h4>🌱 入门阶段（1-2 个月）</h4>
+        <p style="font-size:0.85rem">变量与类型 · 条件判断 · 循环 · 函数 · 列表与字典 · 字符串操作</p>
+        <div style="margin-top:0.3rem"><span class="badge">Python 官方教程</span><span class="badge">Codecademy</span></div>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-2">
+        <h4>🌿 进阶阶段（2-3 个月）</h4>
+        <p style="font-size:0.85rem">面向对象编程 · 模块与包 · 文件操作 · 异常处理 · 装饰器 · 生成器</p>
+        <div style="margin-top:0.3rem"><span class="badge">Fluent Python</span><span class="badge">Real Python</span></div>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-3">
+        <h4>🌳 方向选择（3-6 个月）</h4>
+        <p style="font-size:0.85rem">
+          <strong>Web</strong>：Django/Flask/FastAPI · 数据库 · REST API<br>
+          <strong>数据</strong>：NumPy/Pandas · 可视化 · SQL<br>
+          <strong>AI</strong>：PyTorch · scikit-learn · 深度学习
+        </p>
+      </div>
+      <div class="feature-card anim-slide-up anim-delay-4">
+        <h4>🌲 专业阶段（持续）</h4>
+        <p style="font-size:0.85rem">设计模式 · 并发编程 · 性能优化 · 测试驱动 · CI/CD · 开源贡献</p>
+        <div style="margin-top:0.3rem"><span class="badge">GitHub</span><span class="badge">LeetCode</span></div>
+      </div>
+    </div>
+    <div style="margin-top:1rem;padding:0.8rem;background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.12);border-radius:0.6rem" class="anim-fade-in anim-delay-5">
+      <p style="font-size:0.85rem;margin:0;text-align:center">💡 <strong>核心建议</strong>：边学边写项目，用 Python 解决实际问题是最高效的学习方式</p>
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+<!-- ============================================================ -->
+<!-- SLIDE: slide-14 — END -->
+<!-- ============================================================ -->
+<!-- SLIDE: slide-14 -->
+<section id="slide-14" class="slide" data-slide="14" role="region" aria-label="Slide 14" aria-hidden="true">
+  <div class="glass-card content-center card-tilt" style="max-width:800px;padding:3.5rem">
+    <div style="font-size:5rem;margin-bottom:1rem" class="anim-bounce-in">🐍</div>
+    <h1 class="anim-fade-in anim-delay-1" style="font-size:clamp(2rem,4vw,3rem)">开始你的 Python 之旅</h1>
+    <div class="end-quote anim-slide-up anim-delay-2">
+      "简单的事情简单做，复杂的事情也能做。"<br>
+      <cite>— The Zen of Python</cite>
+    </div>
+    <div style="margin-top:1.5rem" class="anim-fade-in anim-delay-3">
+      <span class="badge">import this</span>
+      <span class="badge">pip install awesome</span>
+      <span class="badge">print("Hello World")</span>
+    </div>
+    <div style="margin-top:2.5rem;font-size:0.85rem;color:var(--text-secondary);opacity:0.6" class="anim-fade-in anim-delay-4">
+      <p>🎯 现在就打开终端，输入 python，开始编写你的第一行代码</p>
+      <p style="margin-top:0.5rem;font-family:var(--font-mono);font-size:0.8rem;color:var(--accent)">>>> print("Hello, Python!")</p>
+    </div>
+    <div style="margin-top:2rem;font-size:0.78rem;color:var(--text-secondary);opacity:0.4" class="anim-fade-in anim-delay-5">
+      — 感谢观看 · 欢迎进入 Python 的世界 —
+    </div>
+  </div>
+</section>
+<!-- /SLIDE -->
+
+</div><!-- /presentation -->
+
+<!-- ========== NAVIGATION ========== -->
+<nav class="slide-nav" role="navigation" aria-label="幻灯片导航">
+  <button id="prevBtn" onclick="navigate(-1)" aria-label="上一页">◀</button>
+  <span class="page-info"><span id="slideCurrent" class="current">1</span> / <span id="slideTotal">14</span></span>
+  <button id="nextBtn" onclick="navigate(1)" aria-label="下一页">▶</button>
+</nav>
+
+<!-- ========== PYODIDE ========== -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+
+<script>
+/* ==================== SLIDE NAVIGATION ==================== */
+let currentSlide = 1;
+const totalSlides = 14;
+
+function goToSlide(n) {
+  if (n < 1 || n > totalSlides) return;
+  const prev = currentSlide;
+  currentSlide = n;
+
+  // Update slides
+  for (let i = 1; i <= totalSlides; i++) {
+    const el = document.getElementById('slide-' + i);
+    if (!el) continue;
+    el.classList.remove('active', 'prev');
+    el.setAttribute('aria-hidden', 'true');
+    if (i === currentSlide) {
+      el.classList.add('active');
+      el.setAttribute('aria-hidden', 'false');
+      // Trigger re-animation
+      el.querySelectorAll('.anim-fade-in, .anim-slide-up, .anim-slide-down, .anim-scale-in, .anim-bounce-in').forEach(el2 => {
+        el2.style.animation = 'none';
+        el2.offsetHeight; // reflow
+        el2.style.animation = '';
+      });
+    } else if (i < currentSlide) {
+      el.classList.add('prev');
+    }
+  }
+
+  // Update UI
+  document.getElementById('slideCurrent').textContent = currentSlide;
+  document.getElementById('slideProgress').style.width = (currentSlide / totalSlides * 100) + '%';
+
+  // Update 3D tilt
+  updateTilt();
+}
+
+function navigate(dir) {
+  goToSlide(currentSlide + dir);
+}
+
+/* ==================== KEYBOARD / MOUSE / TOUCH ==================== */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+    e.preventDefault();
+    navigate(1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    navigate(-1);
+  } else if (e.key === 'Home') {
+    e.preventDefault();
+    goToSlide(1);
+  } else if (e.key === 'End') {
+    e.preventDefault();
+    goToSlide(totalSlides);
+  }
+});
+
+// Click on empty area to navigate
+document.getElementById('presentation').addEventListener('click', function(e) {
+  if (e.target.closest('.run-btn') || e.target.closest('.code-editor') || e.target.closest('.slide-nav')) return;
+  if (e.target.closest('a')) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  if (e.clientX > rect.width * 0.7) {
+    navigate(1);
+  } else if (e.clientX < rect.width * 0.3) {
+    navigate(-1);
+  } else {
+    navigate(1);
+  }
+});
+
+// Mouse wheel
+document.addEventListener('wheel', function(e) {
+  if (e.target.closest('.code-editor') && e.target.closest('.code-editor textarea')) return;
+  if (e.target.closest('.glass-card') && e.target.closest('.glass-card').scrollHeight > e.target.closest('.glass-card').clientHeight) {
+    const card = e.target.closest('.glass-card');
+    if ((e.deltaY > 0 && card.scrollTop < card.scrollHeight - card.clientHeight - 10) ||
+        (e.deltaY < 0 && card.scrollTop > 10)) {
+      return;
+    }
+  }
+  if (Math.abs(e.deltaY) > 5) {
+    e.preventDefault();
+    navigate(e.deltaY > 0 ? 1 : -1);
+  }
+}, {passive: false});
+
+// Touch swipe
+let touchStartX = 0;
+document.addEventListener('touchstart', function(e) {
+  touchStartX = e.changedTouches[0].screenX;
+}, {passive: true});
+document.addEventListener('touchend', function(e) {
+  const diff = touchStartX - e.changedTouches[0].screenX;
+  if (Math.abs(diff) > 50) {
+    navigate(diff > 0 ? 1 : -1);
+  }
+}, {passive: true});
+
+/* ==================== 3D TILT EFFECT ==================== */
+function updateTilt() {
+  const cards = document.querySelectorAll('.slide.active .card-tilt');
+  cards.forEach(card => {
+    card.style.transition = 'transform 0.15s ease-out';
+  });
+}
+
+document.addEventListener('mousemove', function(e) {
+  const activeCard = document.querySelector('.slide.active .card-tilt');
+  if (!activeCard) return;
+  const rect = activeCard.getBoundingClientRect();
+  if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  const rotX = (y - 0.5) * -8;
+  const rotY = (x - 0.5) * 8;
+  activeCard.style.transform = `perspective(1200px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(10px)`;
+});
+
+document.addEventListener('mouseleave', function() {
+  const activeCard = document.querySelector('.slide.active .card-tilt');
+  if (activeCard) {
+    activeCard.style.transform = 'perspective(1200px) rotateX(0) rotateY(0) translateZ(0)';
+  }
+});
+
+/* ==================== PYODIDE CODE RUNNER ==================== */
+let pyodide = null;
+let pyodideLoading = false;
+let pyodideReadyCallbacks = [];
+
+async function loadPyodideInstance() {
+  if (pyodide) return pyodide;
+  if (pyodideLoading) {
+    return new Promise(resolve => {
+      pyodideReadyCallbacks.push(resolve);
+    });
+  }
+  pyodideLoading = true;
+  document.getElementById('pyodide-loading').classList.add('show');
+
+  try {
+    pyodide = await loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/',
+    });
+    document.getElementById('pyodide-loading').classList.remove('show');
+
+    // Simulate loading progress
+    const bar = document.getElementById('loadBarInner');
+    bar.style.width = '100%';
+
+    // After 800ms, hide loading
+    setTimeout(() => {
+      document.getElementById('pyodide-loading').classList.remove('show');
+    }, 500);
+
+    pyodideReadyCallbacks.forEach(cb => cb(pyodide));
+    pyodideReadyCallbacks = [];
+    return pyodide;
+  } catch(e) {
+    document.getElementById('pyodide-loading').querySelector('.load-text').textContent = '❌ 加载失败，请检查网络连接';
+    throw e;
+  }
+}
+
+// Progress simulation during load
+function simulateProgress() {
+  const bar = document.getElementById('loadBarInner');
+  let progress = 0;
+  const interval = setInterval(() => {
+    if (pyodide) { clearInterval(interval); return; }
+    progress += Math.random() * 8;
+    if (progress > 90) { progress = 90; clearInterval(interval); return; }
+    bar.style.width = progress + '%';
+  }, 500);
+}
+
+async function runCode(slideNum) {
+  const textarea = document.getElementById('code-' + slideNum);
+  const output = document.getElementById('output-' + slideNum);
+  const code = textarea.value;
+
+  output.innerHTML = '<span style="color:var(--text-secondary)">⏳ 运行中...</span>';
+
+  try {
+    const py = await loadPyodideInstance();
+    // Redirect stdout
+    py.setStdout({
+      batched: (text) => {
+        output.textContent = text;
+        output.scrollTop = output.scrollHeight;
+      }
+    });
+    py.setStderr({
+      batched: (text) => {
+        output.innerHTML = '<span class="error">' + text.replace(/\n/g, '<br>') + '</span>';
+      }
+    });
+
+    await py.runPythonAsync(code);
+
+    // If no output was captured, show success
+    if (output.textContent === '⏳ 运行中...') {
+      output.textContent = '✅ 代码执行完毕（无输出）';
+    }
+  } catch(e) {
+    output.innerHTML = '<span class="error">❌ ' + e.message.replace(/\n/g, '<br>') + '</span>';
+  }
+}
+
+// Start loading Pyodide in background
+simulateProgress();
+loadPyodideInstance().catch(e => console.error('Pyodide load error:', e));
+
+/* ==================== INIT ==================== */
+goToSlide(1);
+</script>
+</body>
+</html>
