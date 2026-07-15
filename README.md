@@ -12,6 +12,8 @@ HTML-PPT 是一个专注于创建 PPT 风格全屏网页演示文稿的项目。
 >
 > 本项目目前处于早期实验阶段，代码和功能可能存在各种各样的 BUG 与不完善之处。如果你在使用过程中遇到任何问题，欢迎提交 Issue 反馈。
 
+本项目使用 [Meta-skill](https://github.com/hershate/Meta-skill) 构建。
+
 ---
 
 ## ppt-slide-builder
